@@ -5,11 +5,15 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
+import 'core/utils/env_config.dart';
 import 'firebase_options.dart';
 
 void main() async {
   // Assurez-vous que Flutter est initialisé
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Charger les variables d'environnement
+  await EnvConfig.load();
 
   try {
     // Initialiser Firebase
@@ -30,7 +34,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: AppConstants.appName,
+      title: EnvConfig.appName,
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
       routerConfig: _router,

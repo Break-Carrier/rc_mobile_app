@@ -338,7 +338,8 @@ class _SensorReadingsChartState extends State<SensorReadingsChart> {
         maxY: _getMaxY(sortedReadings),
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
-            tooltipBgColor: Colors.white.withAlpha(204),
+            fitInsideHorizontally: true,
+            fitInsideVertically: true,
             getTooltipItems: (List<LineBarSpot> touchedSpots) {
               return touchedSpots.map((spot) {
                 final reading = sortedReadings[spot.x.toInt()];

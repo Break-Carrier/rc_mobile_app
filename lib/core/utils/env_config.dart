@@ -9,6 +9,8 @@ class EnvConfig {
       dotenv.env['FIREBASE_PROJECT_ID'] ?? '';
   static String get firebaseStorageBucket =>
       dotenv.env['FIREBASE_STORAGE_BUCKET'] ?? '';
+  static String get firebaseDatabaseUrl =>
+      dotenv.env['FIREBASE_DATABASE_URL'] ?? '';
 
   static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? '';
   static String get apiVersion => dotenv.env['API_VERSION'] ?? '';

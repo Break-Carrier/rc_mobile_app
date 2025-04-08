@@ -1,41 +1,54 @@
+import 'package:equatable/equatable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Représente une lecture de capteur à un moment spécifique
-class SensorReading {
-  final double temperature;
-  final double humidity;
+/// Représente une lecture de capteur
+class SensorReading extends Equatable {
+  final String sensorId;
+  final String type;
+  final double value;
+  final String unit;
   final DateTime timestamp;
-  final String? id;
+  final Map<String, dynamic>? metadata;
 
-  /// Constructeur pour créer une nouvelle lecture
-  SensorReading({
-    required this.temperature,
-    required this.humidity,
+  /// Constructeur pour créer une nouvelle lecture de capteur
+  const SensorReading({
+    required this.sensorId,
+    required this.type,
+    required this.value,
+    required this.unit,
     required this.timestamp,
-    this.id,
+    this.metadata,
   });
 
-  /// Constructeur à partir des données Firebase Realtime Database
-  factory SensorReading.fromRealtimeDB(Map<String, dynamic> data,
-      [String? key]) {
+  /// Constructeur à partir des données Firestore
+  factory SensorReading.fromFirestore(Map<String, dynamic> data) {
     return SensorReading(
-      temperature: (data['temperature'] as num).toDouble(),
-      humidity: (data['humidity'] as num).toDouble(),
-      timestamp: DateTime.fromMillisecondsSinceEpoch(data['timestamp'] as int),
-      id: key,
+      sensorId: data['sensor_id'] as String,
+      type: data['type'] as String,
+      value: (data['value'] as num).toDouble(),
+      unit: data['unit'] as String,
+      timestamp: (data['timestamp'] as Timestamp).toDate(),
+      metadata: data['metadata'] as Map<String, dynamic>?,
     );
   }
 
-  /// Convertir en Map pour Firebase
+  /// Convertir en Map pour Firestore
   Map<String, dynamic> toMap() {
     return {
-      'temperature': temperature,
-      'humidity': humidity,
-      'timestamp': timestamp.millisecondsSinceEpoch,
+      'sensor_id': sensorId,
+      'type': type,
+      'value': value,
+      'unit': unit,
+      'timestamp': timestamp,
+      'metadata': metadata,
     };
   }
 
   @override
+  List<Object?> get props => [sensorId, type, value, unit, timestamp, metadata];
+
+  @override
   String toString() {
-    return 'SensorReading(temp: $temperature°C, humidity: $humidity%, time: ${timestamp.toIso8601String()})';
+    return 'SensorReading(sensorId: $sensorId, type: $type, value: $value $unit)';
   }
 }

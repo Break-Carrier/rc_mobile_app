@@ -6,6 +6,7 @@ import '../widgets/sensor_readings_chart.dart';
 import '../widgets/threshold_events_widget.dart';
 import '../widgets/threshold_config_widget.dart';
 import '../services/sensor_service.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -46,9 +47,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Monitoring IoT'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
+        title: const Text('Mes Ruches'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              // TODO: Implémenter l'ajout d'une ruche
+            },
+          ),
+        ],
       ),
       body: !sensorService.isInitialized
           ? _buildLoadingScreen()

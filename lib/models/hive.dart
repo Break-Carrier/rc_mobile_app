@@ -41,7 +41,8 @@ class Hive extends Equatable {
           ? CurrentState.fromFirestore(data['current_state'])
           : null,
       recentReadings: (data['recent_readings'] as List<dynamic>?)
-              ?.map((reading) => SensorReading.fromFirestore(reading))
+              ?.map((reading) =>
+                  SensorReading.fromFirestore(reading, reading['id'] as String))
               .toList() ??
           [],
       metadata: data['metadata'] as Map<String, dynamic>?,

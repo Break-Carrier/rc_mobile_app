@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Représente une lecture de capteur
 class SensorReading extends Equatable {
+  final String id;
   final String sensorId;
   final String type;
   final double value;
@@ -10,8 +11,9 @@ class SensorReading extends Equatable {
   final DateTime timestamp;
   final Map<String, dynamic>? metadata;
 
-  /// Constructeur pour créer une nouvelle lecture de capteur
+  /// Constructeur pour créer une nouvelle lecture
   const SensorReading({
+    required this.id,
     required this.sensorId,
     required this.type,
     required this.value,
@@ -20,9 +22,35 @@ class SensorReading extends Equatable {
     this.metadata,
   });
 
-  /// Constructeur à partir des données Firestore
-  factory SensorReading.fromFirestore(Map<String, dynamic> data) {
+  /// Créer une instance à partir des données de la base de données en temps réel
+  factory SensorReading.fromRealtimeDB(Map<String, dynamic> data, String id) {
     return SensorReading(
+      id: id,
+      sensorId: data['sensor_id'] as String,
+      type: data['type'] as String,
+      value: (data['value'] as num).toDouble(),
+      unit: data['unit'] as String,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(data['timestamp'] as int),
+      metadata: data['metadata'] as Map<String, dynamic>?,
+    );
+  }
+
+  /// Convertir en Map pour la base de données en temps réel
+  Map<String, dynamic> toRealtimeDBMap() {
+    return {
+      'sensor_id': sensorId,
+      'type': type,
+      'value': value,
+      'unit': unit,
+      'timestamp': timestamp.millisecondsSinceEpoch,
+      'metadata': metadata,
+    };
+  }
+
+  /// Constructeur à partir des données Firestore
+  factory SensorReading.fromFirestore(Map<String, dynamic> data, String id) {
+    return SensorReading(
+      id: id,
       sensorId: data['sensor_id'] as String,
       type: data['type'] as String,
       value: (data['value'] as num).toDouble(),
@@ -45,10 +73,11 @@ class SensorReading extends Equatable {
   }
 
   @override
-  List<Object?> get props => [sensorId, type, value, unit, timestamp, metadata];
+  List<Object?> get props =>
+      [id, sensorId, type, value, unit, timestamp, metadata];
 
   @override
   String toString() {
-    return 'SensorReading(sensorId: $sensorId, type: $type, value: $value $unit)';
+    return 'SensorReading(id: $id, type: $type, value: $value $unit, timestamp: $timestamp)';
   }
 }

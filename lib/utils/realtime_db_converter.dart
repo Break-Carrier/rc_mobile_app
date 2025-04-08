@@ -9,13 +9,12 @@ class RealtimeDBConverter {
     return CurrentState(
       temperature: (json['temperature'] as num).toDouble(),
       humidity: (json['humidity'] as num).toDouble(),
-      weight: 0.0, // Non présent dans les données actuelles
-      soundLevel: 0.0, // Non présent dans les données actuelles
-      lastUpdated:
-          DateTime.fromMillisecondsSinceEpoch(json['lastUpdate'] as int),
+      timestamp: DateTime.fromMillisecondsSinceEpoch(json['lastUpdate'] as int),
+      thresholdHigh: (json['threshold_high'] as num?)?.toDouble() ?? 28.0,
+      thresholdLow: (json['threshold_low'] as num?)?.toDouble() ?? 15.0,
+      isOverThreshold: json['isThresholdExceeded'] as bool? ?? false,
       metadata: {
         'batteryLevel': json['batteryLevel'],
-        'isThresholdExceeded': json['isThresholdExceeded'],
       },
     );
   }
@@ -28,6 +27,7 @@ class RealtimeDBConverter {
       if (value is Map<String, dynamic>) {
         // Lecture de température
         readings.add(SensorReading(
+          id: '${key}_temp',
           sensorId: key,
           type: 'temperature',
           value: (value['temperature'] as num).toDouble(),
@@ -38,6 +38,7 @@ class RealtimeDBConverter {
 
         // Lecture d'humidité
         readings.add(SensorReading(
+          id: '${key}_hum',
           sensorId: key,
           type: 'humidity',
           value: (value['humidity'] as num).toDouble(),

@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+import 'core/theme/app_theme.dart';
+import 'core/constants/app_constants.dart';
+import 'core/utils/env_config.dart';
 import 'firebase_options.dart';
-import 'screens/home_screen.dart';
-import 'services/sensor_service.dart';
 
 void main() async {
   // Assurez-vous que Flutter est initialisé
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Charger les variables d'environnement
+  await EnvConfig.load();
 
   try {
     // Initialiser Firebase
@@ -28,23 +33,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => SensorService(),
-      child: MaterialApp(
-        title: 'IoT Monitoring',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          useMaterial3: true,
-          cardTheme: CardTheme(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-        home: const HomeScreen(),
-        debugShowCheckedModeBanner: false,
-      ),
+    return MaterialApp.router(
+      title: EnvConfig.appName,
+      theme: AppTheme.lightTheme,
+      debugShowCheckedModeBanner: false,
+      routerConfig: _router,
     );
   }
 }
+
+final _router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    // Les routes seront ajoutées ici
+  ],
+);

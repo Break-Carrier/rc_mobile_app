@@ -348,9 +348,9 @@ class _SensorReadingsChartState extends State<SensorReadingsChart> {
 
                 String text = '';
                 if (spot.barIndex == 0 && _showTemperature) {
-                  text = '${reading.temperature.toStringAsFixed(1)}°C à $time';
+                  text = '${reading.value.toStringAsFixed(1)}°C à $time';
                 } else if (spot.barIndex == 1 && _showHumidity) {
-                  text = '${reading.humidity.toStringAsFixed(1)}% à $time';
+                  text = '${reading.value.toStringAsFixed(1)}% à $time';
                 }
 
                 return LineTooltipItem(
@@ -453,7 +453,9 @@ class _SensorReadingsChartState extends State<SensorReadingsChart> {
   List<FlSpot> _getTemperatureSpots(List<SensorReading> readings) {
     final spots = <FlSpot>[];
     for (int i = 0; i < readings.length; i++) {
-      spots.add(FlSpot(i.toDouble(), readings[i].temperature));
+      if (readings[i].type == 'temperature') {
+        spots.add(FlSpot(i.toDouble(), readings[i].value));
+      }
     }
     return spots;
   }
@@ -461,7 +463,9 @@ class _SensorReadingsChartState extends State<SensorReadingsChart> {
   List<FlSpot> _getHumiditySpots(List<SensorReading> readings) {
     final spots = <FlSpot>[];
     for (int i = 0; i < readings.length; i++) {
-      spots.add(FlSpot(i.toDouble(), readings[i].humidity));
+      if (readings[i].type == 'humidity') {
+        spots.add(FlSpot(i.toDouble(), readings[i].value));
+      }
     }
     return spots;
   }
@@ -471,11 +475,11 @@ class _SensorReadingsChartState extends State<SensorReadingsChart> {
     double maxHumidity = 0;
 
     for (final reading in readings) {
-      if (reading.temperature > maxTemperature) {
-        maxTemperature = reading.temperature;
+      if (reading.type == 'temperature' && reading.value > maxTemperature) {
+        maxTemperature = reading.value;
       }
-      if (reading.humidity > maxHumidity) {
-        maxHumidity = reading.humidity;
+      if (reading.type == 'humidity' && reading.value > maxHumidity) {
+        maxHumidity = reading.value;
       }
     }
 

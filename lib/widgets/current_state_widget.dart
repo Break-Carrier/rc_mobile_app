@@ -152,7 +152,7 @@ class CurrentStateWidget extends StatelessWidget {
 
   Widget _buildStateDisplay(BuildContext context, CurrentState state) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm:ss');
-    final lastUpdate = dateFormat.format(state.lastUpdate);
+    final lastUpdate = dateFormat.format(state.timestamp);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

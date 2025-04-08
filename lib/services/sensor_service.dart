@@ -86,7 +86,7 @@ class SensorService extends ChangeNotifier {
           return {
             'temperature': state.temperature,
             'humidity': state.humidity,
-            'last_update': state.lastUpdate.millisecondsSinceEpoch,
+            'last_update': state.timestamp.millisecondsSinceEpoch,
             'threshold_high': state.thresholdHigh,
             'threshold_low': state.thresholdLow,
             'is_over_threshold': state.isOverThreshold,

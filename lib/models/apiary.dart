@@ -25,16 +25,58 @@ class Apiary extends Equatable {
     this.metadata,
   });
 
-  /// Constructeur à partir des données Firestore
+  /// Constructeur à partir des données Firestore ou Firebase Realtime Database
   factory Apiary.fromFirestore(Map<String, dynamic> data, String id) {
+    // Gérer les champs de date manquants
+    final now = DateTime.now();
+    DateTime createdAt;
+    DateTime updatedAt;
+
+    try {
+      // Essayer de traiter les timestamps s'ils existent
+      if (data['created_at'] is Timestamp) {
+        createdAt = (data['created_at'] as Timestamp).toDate();
+      } else if (data['created_at'] is int) {
+        createdAt =
+            DateTime.fromMillisecondsSinceEpoch(data['created_at'] as int);
+      } else {
+        createdAt = now; // Valeur par défaut si le champ est manquant
+      }
+
+      if (data['updated_at'] is Timestamp) {
+        updatedAt = (data['updated_at'] as Timestamp).toDate();
+      } else if (data['updated_at'] is int) {
+        updatedAt =
+            DateTime.fromMillisecondsSinceEpoch(data['updated_at'] as int);
+      } else {
+        updatedAt = now; // Valeur par défaut si le champ est manquant
+      }
+    } catch (e) {
+      // En cas d'erreur, utiliser la date actuelle
+      createdAt = now;
+      updatedAt = now;
+    }
+
+    // Extraire les IDs des ruches
+    List<String> hiveIds = [];
+    if (data['hive_ids'] != null) {
+      if (data['hive_ids'] is List) {
+        hiveIds = List<String>.from(data['hive_ids']);
+      } else if (data['hive_ids'] is Map) {
+        // Si c'est un Map, prendre les clés
+        hiveIds =
+            (data['hive_ids'] as Map).keys.map((k) => k.toString()).toList();
+      }
+    }
+
     return Apiary(
       id: id,
       name: data['name'] as String,
       location: data['location'] as String,
       description: data['description'] as String?,
-      createdAt: (data['created_at'] as Timestamp).toDate(),
-      updatedAt: (data['updated_at'] as Timestamp).toDate(),
-      hiveIds: List<String>.from(data['hive_ids'] ?? []),
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      hiveIds: hiveIds,
       metadata: data['metadata'] as Map<String, dynamic>?,
     );
   }
@@ -45,8 +87,8 @@ class Apiary extends Equatable {
       'name': name,
       'location': location,
       'description': description,
-      'created_at': createdAt,
-      'updated_at': updatedAt,
+      'created_at': createdAt.millisecondsSinceEpoch,
+      'updated_at': updatedAt.millisecondsSinceEpoch,
       'hive_ids': hiveIds,
       'metadata': metadata,
     };

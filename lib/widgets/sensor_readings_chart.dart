@@ -7,7 +7,16 @@ import '../models/time_filter.dart';
 import '../services/sensor_service.dart';
 
 class SensorReadingsChart extends StatefulWidget {
-  const SensorReadingsChart({super.key});
+  final List<SensorReading>? readings;
+  final String? apiaryId;
+  final bool showAverageTemperature;
+
+  const SensorReadingsChart({
+    super.key,
+    this.readings,
+    this.apiaryId,
+    this.showAverageTemperature = false,
+  });
 
   @override
   State<SensorReadingsChart> createState() => _SensorReadingsChartState();
@@ -35,31 +44,63 @@ class _SensorReadingsChartState extends State<SensorReadingsChart> {
             const SizedBox(height: 16),
             SizedBox(
               height: 300,
-              child: StreamBuilder<List<SensorReading>>(
-                stream: sensorService.getSensorReadings(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting &&
-                      !snapshot.hasData) {
-                    return _buildLoadingIndicator();
-                  }
+              child: widget.readings != null
+                  ? _buildChartWithData(widget.readings!)
+                  : widget.showAverageTemperature && widget.apiaryId != null
+                      ? _buildAverageTemperatureChart(
+                          sensorService, widget.apiaryId!)
+                      : StreamBuilder<List<SensorReading>>(
+                          stream: sensorService.getSensorReadings(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                    ConnectionState.waiting &&
+                                !snapshot.hasData) {
+                              return _buildLoadingIndicator();
+                            }
 
-                  if (snapshot.hasError) {
-                    return _buildErrorDisplay(snapshot.error.toString());
-                  }
+                            if (snapshot.hasError) {
+                              return _buildErrorDisplay(
+                                  snapshot.error.toString());
+                            }
 
-                  final readings = snapshot.data ?? [];
+                            final readings = snapshot.data ?? [];
 
-                  if (readings.isEmpty) {
-                    return _buildNoDataDisplay();
-                  }
+                            if (readings.isEmpty) {
+                              return _buildNoDataDisplay();
+                            }
 
-                  return _buildChart(readings);
-                },
-              ),
+                            return _buildChart(readings);
+                          },
+                        ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAverageTemperatureChart(
+      SensorService sensorService, String apiaryId) {
+    return StreamBuilder<List<SensorReading>>(
+      stream: sensorService.getAverageTemperatureForApiary(apiaryId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return _buildLoadingIndicator();
+        }
+
+        if (snapshot.hasError) {
+          return _buildErrorDisplay(snapshot.error.toString());
+        }
+
+        final readings = snapshot.data ?? [];
+
+        if (readings.isEmpty) {
+          return _buildNoDataDisplay();
+        }
+
+        return _buildChartWithData(readings);
+      },
     );
   }
 
@@ -68,11 +109,16 @@ class _SensorReadingsChartState extends State<SensorReadingsChart> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
-          'Évolution des capteurs',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+        Flexible(
+          child: Text(
+            widget.showAverageTemperature
+                ? 'Température moyenne du rucher'
+                : 'Évolution des capteurs',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         Container(
@@ -328,90 +374,113 @@ class _SensorReadingsChartState extends State<SensorReadingsChart> {
   }
 
   Widget _buildChart(List<SensorReading> readings) {
-    // Nous devons trier les lectures par ordre chronologique pour le graphique
-    final sortedReadings = List<SensorReading>.from(readings)
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final temperatureReadings = readings
+        .where((reading) => reading.type.toLowerCase() == 'temperature')
+        .toList();
+    final humidityReadings = readings
+        .where((reading) => reading.type.toLowerCase() == 'humidity')
+        .toList();
+
+    if (widget.showAverageTemperature) {
+      // Si c'est la vue de température moyenne, désactiver l'humidité
+      _showHumidity = false;
+    }
+
+    // Si aucune donnée n'est disponible ou si aucun type n'est sélectionné
+    if ((temperatureReadings.isEmpty || !_showTemperature) &&
+        (humidityReadings.isEmpty || !_showHumidity)) {
+      return _buildNoDataDisplay();
+    }
+
+    // Obtenir les plages de valeurs pour l'échelle de l'axe Y
+    double minY = double.infinity;
+    double maxY = double.negativeInfinity;
+
+    if (_showTemperature && temperatureReadings.isNotEmpty) {
+      final tempMin = temperatureReadings
+          .map((reading) => reading.value)
+          .reduce((a, b) => a < b ? a : b);
+      final tempMax = temperatureReadings
+          .map((reading) => reading.value)
+          .reduce((a, b) => a > b ? a : b);
+      minY = tempMin < minY ? tempMin : minY;
+      maxY = tempMax > maxY ? tempMax : maxY;
+    }
+
+    if (_showHumidity && humidityReadings.isNotEmpty) {
+      final humMin = humidityReadings
+          .map((reading) => reading.value)
+          .reduce((a, b) => a < b ? a : b);
+      final humMax = humidityReadings
+          .map((reading) => reading.value)
+          .reduce((a, b) => a > b ? a : b);
+      minY = humMin < minY ? humMin : minY;
+      maxY = humMax > maxY ? humMax : maxY;
+    }
+
+    // Ajouter une marge de 10% à l'échelle
+    final yRange = maxY - minY;
+    minY = minY - (yRange * 0.1);
+    maxY = maxY + (yRange * 0.1);
+
+    // Ajuster minY pour qu'il ne soit jamais négatif pour l'humidité
+    if (_showHumidity && !_showTemperature) {
+      minY = minY < 0 ? 0 : minY;
+    }
+
+    // Déterminer la plage des timestamps pour l'axe X
+    final timestamps = [...temperatureReadings, ...humidityReadings]
+        .map((reading) => reading.timestamp.millisecondsSinceEpoch)
+        .toList();
+    timestamps.sort();
+    final minX = timestamps.isNotEmpty ? timestamps.first.toDouble() : 0;
+    final maxX = timestamps.isNotEmpty ? timestamps.last.toDouble() : 1;
 
     return LineChart(
       LineChartData(
-        minY: 0,
-        maxY: _getMaxY(sortedReadings),
-        lineTouchData: LineTouchData(
-          touchTooltipData: LineTouchTooltipData(
-            fitInsideHorizontally: true,
-            fitInsideVertically: true,
-            getTooltipItems: (List<LineBarSpot> touchedSpots) {
-              return touchedSpots.map((spot) {
-                final reading = sortedReadings[spot.x.toInt()];
-                final formatter = DateFormat('HH:mm:ss');
-                final time = formatter.format(reading.timestamp);
-
-                String text = '';
-                if (spot.barIndex == 0 && _showTemperature) {
-                  text = '${reading.value.toStringAsFixed(1)}°C à $time';
-                } else if (spot.barIndex == 1 && _showHumidity) {
-                  text = '${reading.value.toStringAsFixed(1)}% à $time';
-                }
-
-                return LineTooltipItem(
-                  text,
-                  TextStyle(
-                    color: spot.barIndex == 0 ? Colors.red : Colors.blue,
-                    fontWeight: FontWeight.bold,
-                  ),
-                );
-              }).toList();
-            },
-          ),
-          touchCallback: (_, __) {},
-          handleBuiltInTouches: true,
-        ),
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: true,
-          horizontalInterval: 10,
-          verticalInterval:
-              sortedReadings.length < 10 ? 1 : sortedReadings.length / 10,
-        ),
+        gridData: const FlGridData(show: true),
         titlesData: FlTitlesData(
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 30,
-              interval: _getIntervalForReadings(sortedReadings),
               getTitlesWidget: (value, meta) {
-                if (value < 0 || value >= sortedReadings.length) {
+                try {
+                  final date =
+                      DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      DateFormat('HH:mm').format(date),
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                  );
+                } catch (e) {
                   return const SizedBox();
                 }
-                final reading = sortedReadings[value.toInt()];
-                final formatter = DateFormat('HH:mm');
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    formatter.format(reading.timestamp),
-                    style: const TextStyle(fontSize: 10),
-                  ),
-                );
               },
+              reservedSize: 32,
             ),
           ),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 35,
               getTitlesWidget: (value, meta) {
-                return Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(fontSize: 10),
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Text(
+                    value.toStringAsFixed(1),
+                    style: const TextStyle(fontSize: 10),
+                  ),
                 );
               },
+              reservedSize: 40,
             ),
-          ),
-          rightTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
           ),
         ),
         borderData: FlBorderData(
@@ -419,80 +488,156 @@ class _SensorReadingsChartState extends State<SensorReadingsChart> {
           border: Border.all(color: const Color(0xff37434d)),
         ),
         lineBarsData: [
-          if (_showTemperature)
+          if (_showTemperature && temperatureReadings.isNotEmpty)
             LineChartBarData(
-              spots: _getTemperatureSpots(sortedReadings),
+              spots: temperatureReadings
+                  .map((reading) => FlSpot(
+                        reading.timestamp.millisecondsSinceEpoch.toDouble(),
+                        reading.value,
+                      ))
+                  .toList(),
               isCurved: true,
-              barWidth: 3,
               color: Colors.red,
-              isStrokeCapRound: true,
-              dotData: FlDotData(show: false),
+              barWidth: 3,
+              dotData: FlDotData(show: temperatureReadings.length < 10),
               belowBarData: BarAreaData(
                 show: true,
-                color: Colors.red.withAlpha(26),
+                color: Colors.red.withOpacity(0.15),
               ),
             ),
-          if (_showHumidity)
+          if (_showHumidity && humidityReadings.isNotEmpty)
             LineChartBarData(
-              spots: _getHumiditySpots(sortedReadings),
+              spots: humidityReadings
+                  .map((reading) => FlSpot(
+                        reading.timestamp.millisecondsSinceEpoch.toDouble(),
+                        reading.value,
+                      ))
+                  .toList(),
               isCurved: true,
-              barWidth: 3,
               color: Colors.blue,
-              isStrokeCapRound: true,
-              dotData: FlDotData(show: false),
+              barWidth: 3,
+              dotData: FlDotData(show: humidityReadings.length < 10),
               belowBarData: BarAreaData(
                 show: true,
-                color: Colors.blue.withAlpha(26),
+                color: Colors.blue.withOpacity(0.15),
               ),
             ),
         ],
+        lineTouchData: LineTouchData(
+          enabled: true,
+        ),
       ),
     );
   }
 
-  List<FlSpot> _getTemperatureSpots(List<SensorReading> readings) {
-    final spots = <FlSpot>[];
-    for (int i = 0; i < readings.length; i++) {
-      if (readings[i].type == 'temperature') {
-        spots.add(FlSpot(i.toDouble(), readings[i].value));
-      }
-    }
-    return spots;
-  }
+  Widget _buildChartWithData(List<SensorReading> readings) {
+    final temperatureReadings = readings
+        .where((reading) => reading.type.toLowerCase() == 'temperature')
+        .toList();
+    final humidityReadings = readings
+        .where((reading) => reading.type.toLowerCase() == 'humidity')
+        .toList();
 
-  List<FlSpot> _getHumiditySpots(List<SensorReading> readings) {
-    final spots = <FlSpot>[];
-    for (int i = 0; i < readings.length; i++) {
-      if (readings[i].type == 'humidity') {
-        spots.add(FlSpot(i.toDouble(), readings[i].value));
-      }
-    }
-    return spots;
-  }
-
-  double _getMaxY(List<SensorReading> readings) {
-    double maxTemperature = 0;
-    double maxHumidity = 0;
-
-    for (final reading in readings) {
-      if (reading.type == 'temperature' && reading.value > maxTemperature) {
-        maxTemperature = reading.value;
-      }
-      if (reading.type == 'humidity' && reading.value > maxHumidity) {
-        maxHumidity = reading.value;
-      }
+    if (widget.showAverageTemperature) {
+      // For average temperature, only show temperature data
+      return _buildChart(readings);
     }
 
-    // Prendre la valeur maximale entre température et humidité
-    // et ajouter une marge de 10%
-    return (maxTemperature > maxHumidity ? maxTemperature : maxHumidity) * 1.1;
-  }
+    if (temperatureReadings.isEmpty && humidityReadings.isEmpty) {
+      return _buildNoDataDisplay();
+    }
 
-  double _getIntervalForReadings(List<SensorReading> readings) {
-    if (readings.length <= 5) return 1;
-    if (readings.length <= 20) return 2;
-    if (readings.length <= 60) return 5;
-    if (readings.length <= 120) return 10;
-    return readings.length / 10;
+    return LineChart(
+      LineChartData(
+        gridData: const FlGridData(show: true),
+        titlesData: FlTitlesData(
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                try {
+                  final date =
+                      DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      DateFormat('HH:mm').format(date),
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                  );
+                } catch (e) {
+                  return const SizedBox();
+                }
+              },
+              reservedSize: 32,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Text(
+                    value.toStringAsFixed(1),
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                );
+              },
+              reservedSize: 40,
+            ),
+          ),
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(color: const Color(0xff37434d)),
+        ),
+        lineBarsData: [
+          if (_showTemperature && temperatureReadings.isNotEmpty)
+            LineChartBarData(
+              spots: temperatureReadings
+                  .map((reading) => FlSpot(
+                        reading.timestamp.millisecondsSinceEpoch.toDouble(),
+                        reading.value,
+                      ))
+                  .toList(),
+              isCurved: true,
+              color: Colors.red,
+              barWidth: 3,
+              dotData: FlDotData(show: temperatureReadings.length < 10),
+              belowBarData: BarAreaData(
+                show: true,
+                color: Colors.red.withOpacity(0.15),
+              ),
+            ),
+          if (_showHumidity && humidityReadings.isNotEmpty)
+            LineChartBarData(
+              spots: humidityReadings
+                  .map((reading) => FlSpot(
+                        reading.timestamp.millisecondsSinceEpoch.toDouble(),
+                        reading.value,
+                      ))
+                  .toList(),
+              isCurved: true,
+              color: Colors.blue,
+              barWidth: 3,
+              dotData: FlDotData(show: humidityReadings.length < 10),
+              belowBarData: BarAreaData(
+                show: true,
+                color: Colors.blue.withOpacity(0.15),
+              ),
+            ),
+        ],
+        lineTouchData: LineTouchData(
+          enabled: true,
+        ),
+      ),
+    );
   }
 }

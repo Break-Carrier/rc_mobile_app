@@ -9,8 +9,9 @@ import 'firebase_service.dart';
 class SensorReadingService extends ChangeNotifier {
   final FirebaseService _firebaseService;
 
-  /// Chemin vers la collection dans Firebase
-  static const String _path = 'sensor_readings';
+  /// ID de la ruche actuellement sélectionnée
+  String? _currentHiveId;
+  String? get currentHiveId => _currentHiveId;
 
   /// Filtre temporel actuel
   TimeFilter _timeFilter = TimeFilter.oneHour;
@@ -30,26 +31,46 @@ class SensorReadingService extends ChangeNotifier {
   StreamSubscription? _readingsSubscription;
 
   /// Constructeur
-  SensorReadingService(this._firebaseService) {
+  SensorReadingService(this._firebaseService);
+
+  /// Définit la ruche active et configure l'écouteur
+  void setCurrentHive(String hiveId) {
+    _currentHiveId = hiveId;
+    _cancelCurrentSubscription();
     _setupReadingsListener();
+    notifyListeners();
+  }
+
+  /// Annule l'abonnement actuel
+  void _cancelCurrentSubscription() {
+    _readingsSubscription?.cancel();
+    _readingsSubscription = null;
   }
 
   /// Configure l'écouteur de lectures
   void _setupReadingsListener() {
+    if (_currentHiveId == null) {
+      debugPrint('⚠️ No hive selected, cannot setup readings listener');
+      return;
+    }
+
     try {
+      // Construire le chemin spécifique à la ruche
+      final path = 'hives/$_currentHiveId/sensor_readings';
+
       // Nombre de lectures à récupérer en fonction du filtre temporel
-      // Plus le filtre est grand, plus nous avons besoin de données
       int limit = _getLimitForTimeFilter(_timeFilter);
 
       _readingsSubscription =
-          _firebaseService.getLatestEntriesStream(_path, limit).listen((event) {
+          _firebaseService.getLatestEntriesStream(path, limit).listen((event) {
         if (event.snapshot.exists) {
           try {
             // Convertir les données de façon sécurisée
             if (event.snapshot.value is Map) {
               final rawData = event.snapshot.value as Map<Object?, Object?>;
-              final Map<String, dynamic> data = MapConverter.convertToStringDynamicMap(rawData);
-              
+              final Map<String, dynamic> data =
+                  MapConverter.convertToStringDynamicMap(rawData);
+
               _processReadingsData(data);
             } else {
               debugPrint('⚠️ Les données reçues ne sont pas au format Map');
@@ -62,7 +83,8 @@ class SensorReadingService extends ChangeNotifier {
             _readingsStreamController.addError(e);
           }
         } else {
-          debugPrint('⚠️ No sensor readings data available');
+          debugPrint(
+              '⚠️ No sensor readings data available for hive $_currentHiveId');
           _readings = [];
           _readingsStreamController.add(_readings);
           notifyListeners();
@@ -101,7 +123,8 @@ class SensorReadingService extends ChangeNotifier {
       _readingsStreamController.add(_readings);
       notifyListeners();
 
-      debugPrint('📊 ${_readings.length} sensor readings updated');
+      debugPrint(
+          '📊 ${_readings.length} sensor readings updated for hive $_currentHiveId');
     } catch (e) {
       debugPrint('❌ Error processing sensor readings data: $e');
     }
@@ -139,15 +162,22 @@ class SensorReadingService extends ChangeNotifier {
 
   /// Récupère les lectures une seule fois
   Future<List<SensorReading>> getSensorReadings() async {
+    if (_currentHiveId == null) {
+      debugPrint('⚠️ No hive selected, cannot get sensor readings');
+      return [];
+    }
+
     try {
+      final path = 'hives/$_currentHiveId/sensor_readings';
       int limit = _getLimitForTimeFilter(_timeFilter);
-      final data = await _firebaseService.getLatestEntries(_path, limit);
+      final data = await _firebaseService.getLatestEntries(path, limit);
 
       if (data != null) {
         _processReadingsData(data);
         return _readings;
       } else {
-        debugPrint('⚠️ No sensor readings data available');
+        debugPrint(
+            '⚠️ No sensor readings data available for hive $_currentHiveId');
         _readings = [];
         _readingsStreamController.add(_readings);
         notifyListeners();
@@ -165,7 +195,7 @@ class SensorReadingService extends ChangeNotifier {
       _timeFilter = filter;
 
       // Annuler l'abonnement actuel et en créer un nouveau avec la nouvelle limite
-      await _readingsSubscription?.cancel();
+      _cancelCurrentSubscription();
       _setupReadingsListener();
 
       // Récupérer les données avec le nouveau filtre

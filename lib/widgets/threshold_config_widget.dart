@@ -13,9 +13,9 @@ class ThresholdConfigWidget extends StatefulWidget {
 class _ThresholdConfigWidgetState extends State<ThresholdConfigWidget> {
   static const double _minTemperature = 10.0;
   static const double _maxTemperature = 35.0;
-  static const double _hysteresisMargin = 1.0; // Marge d'hystérésis (±1°C)
+  static const double _hysteresisMargin = 0.5; // Marge d'hystérésis (±0.5°C)
 
-  double _targetTemperature = 22.0;
+  double _targetTemperature = 28.0; // La valeur par défaut dans Firebase est 28
   bool _isEditing = false;
 
   @override
@@ -31,10 +31,9 @@ class _ThresholdConfigWidgetState extends State<ThresholdConfigWidget> {
     final currentState = sensorService.lastKnownState;
 
     if (currentState != null) {
-      // Calcule la température cible comme la moyenne des seuils
       setState(() {
-        _targetTemperature =
-            (currentState.thresholdHigh + currentState.thresholdLow) / 2;
+        // Dans le nouveau format, thresholdHigh est la valeur de seuil principale
+        _targetTemperature = currentState.thresholdHigh;
       });
     }
   }
@@ -42,6 +41,12 @@ class _ThresholdConfigWidgetState extends State<ThresholdConfigWidget> {
   @override
   Widget build(BuildContext context) {
     final sensorService = Provider.of<SensorService>(context);
+    final currentHiveId = sensorService.currentHiveId;
+
+    // Si aucune ruche n'est sélectionnée, on n'affiche pas le widget
+    if (currentHiveId == null) {
+      return const SizedBox();
+    }
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -456,253 +461,103 @@ class _ThresholdConfigWidgetState extends State<ThresholdConfigWidget> {
 
   Widget _buildThresholdEditor(
       BuildContext context, CurrentState state, SensorService sensorService) {
-    // Calcule les seuils à partir de la température cible et de la marge d'hystérésis
-    final double thresholdHigh = _targetTemperature + _hysteresisMargin;
-    final double thresholdLow = _targetTemperature - _hysteresisMargin;
-
+    // Dans le nouveau format, on n'a qu'un seul seuil avec des offsets d'hystérésis
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(10),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        const Text(
+          'Ajustez le seuil de température',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '${_minTemperature.toStringAsFixed(1)}°C',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              '${_maxTemperature.toStringAsFixed(1)}°C',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        Slider(
+          value: _targetTemperature,
+          min: _minTemperature,
+          max: _maxTemperature,
+          divisions: ((_maxTemperature - _minTemperature) * 2).toInt(),
+          label: '${_targetTemperature.toStringAsFixed(1)}°C',
+          onChanged: (value) {
+            setState(() {
+              _targetTemperature = value;
+            });
+          },
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            OutlinedButton(
+              onPressed: () {
+                setState(() {
+                  _isEditing = false;
+                  _loadCurrentThresholds(); // Réinitialiser les valeurs
+                });
+              },
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
-            ],
-            border: Border.all(
-              color: Colors.purple.withAlpha(50),
-              width: 1.5,
+              child: const Text('Annuler'),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Température cible:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  // Mettre à jour les seuils de température
+                  // Dans le nouveau format, on n'a qu'un seuil avec des offsets d'hystérésis
+                  // Le seuil bas n'est plus utilisé directement
+                  await sensorService.updateThresholds(
+                    _targetTemperature -
+                        (_hysteresisMargin *
+                            2), // Seuil bas (inutilisé dans le nouveau format)
+                    _targetTemperature, // Seuil principal
+                  );
+
+                  setState(() {
+                    _isEditing = false;
+                  });
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Seuils mis à jour avec succès'),
+                        backgroundColor: Colors.green,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.purple.withAlpha(30),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.purple.withAlpha(50),
-                          width: 1,
-                        ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erreur: $e'),
+                        backgroundColor: Colors.red,
                       ),
-                      child: Text(
-                        '${_targetTemperature.toStringAsFixed(1)}°C',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.purple,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    activeTrackColor: Colors.purple,
-                    inactiveTrackColor: Colors.purple.withAlpha(30),
-                    thumbColor: Colors.purple,
-                    overlayColor: Colors.purple.withAlpha(30),
-                    valueIndicatorColor: Colors.purple,
-                    valueIndicatorTextStyle: const TextStyle(
-                      color: Colors.white,
-                    ),
-                  ),
-                  child: Slider(
-                    value: _targetTemperature,
-                    min: _minTemperature,
-                    max: _maxTemperature,
-                    divisions: (_maxTemperature - _minTemperature).floor() *
-                        2, // Pas de 0.5°C
-                    label: '${_targetTemperature.toStringAsFixed(1)}°C',
-                    onChanged: (value) {
-                      setState(() {
-                        _targetTemperature = value;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${_minTemperature.toStringAsFixed(0)}°C',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    Text(
-                      '${_maxTemperature.toStringAsFixed(0)}°C',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Seuils résultants avec hystérésis:',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.arrow_upward,
-                                  color: Colors.red,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Haut:',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withAlpha(30),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${thresholdHigh.toStringAsFixed(1)}°C',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.arrow_downward,
-                                  color: Colors.blue,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Bas:',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withAlpha(30),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${thresholdLow.toStringAsFixed(1)}°C',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.blue,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _isEditing = false;
-                        });
-                      },
-                      icon: const Icon(Icons.cancel),
-                      label: const Text('Annuler'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[300],
-                        foregroundColor: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // Enregistrer les nouveaux seuils
-                        sensorService.updateThresholds(
-                          thresholdLow,
-                          thresholdHigh,
-                        );
-                        setState(() {
-                          _isEditing = false;
-                        });
-                      },
-                      icon: const Icon(Icons.save),
-                      label: const Text('Enregistrer'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              child: const Text('Enregistrer'),
             ),
-          ),
+          ],
         ),
       ],
     );

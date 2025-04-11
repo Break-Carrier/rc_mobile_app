@@ -19,6 +19,11 @@ class _ThresholdEventsWidgetState extends State<ThresholdEventsWidget> {
   Widget build(BuildContext context) {
     final sensorService = Provider.of<SensorService>(context);
 
+    // Si aucune ruche n'est sélectionnée, on n'affiche pas le widget
+    if (sensorService.currentHiveId == null) {
+      return const SizedBox();
+    }
+
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(

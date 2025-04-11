@@ -69,8 +69,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: const [
-                    CurrentStateWidget(),
+                  children: [
+                    CurrentStateWidget(
+                      hiveId: 'current',
+                      sensorService: Provider.of<SensorService>(context),
+                    ),
                     ThresholdConfigWidget(),
                     SensorReadingsChart(),
                     ThresholdEventsWidget(),

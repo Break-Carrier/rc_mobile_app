@@ -91,6 +91,12 @@ class ScaffoldWithBottomNavBar extends StatelessWidget {
               context.go('/');
               break;
             case 1:
+              context.go('/hive/current');
+              break;
+            case 2:
+              context.go('/alerts');
+              break;
+            case 3:
               context.go('/settings');
               break;
           }
@@ -98,9 +104,19 @@ class ScaffoldWithBottomNavBar extends StatelessWidget {
         selectedIndex: _calculateSelectedIndex(context),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Accueil',
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Tableau de bord',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.hive_outlined),
+            selectedIcon: Icon(Icons.hive),
+            label: 'Ruches',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.notifications_outlined),
+            selectedIcon: Icon(Icons.notifications),
+            label: 'Alertes',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
@@ -114,7 +130,9 @@ class ScaffoldWithBottomNavBar extends StatelessWidget {
 
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
-    if (location.startsWith('/settings')) return 1;
+    if (location.startsWith('/settings')) return 3;
+    if (location.startsWith('/alerts')) return 2;
+    if (location.startsWith('/hive')) return 1;
     return 0;
   }
 }

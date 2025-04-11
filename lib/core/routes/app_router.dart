@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../screens/home_screen.dart';
-import '../../screens/hive_details_screen.dart';
 import '../../screens/settings_screen.dart';
 import '../../screens/sensor_readings_screen.dart';
 import '../../screens/alerts_screen.dart';
 import '../../screens/apiaries_screen.dart';
 import '../../screens/hives_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/hive/presentation/screens/hive_details_screen.dart';
 
 /// Configuration des routes de l'application
 class AppRouter {

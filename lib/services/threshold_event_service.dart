@@ -8,10 +8,11 @@ import 'firebase_service.dart';
 class ThresholdEventService extends ChangeNotifier {
   final FirebaseService _firebaseService;
 
-  /// Chemin vers la collection dans Firebase
-  static const String _path = 'threshold_events';
+  /// ID de la ruche actuellement sélectionnée
+  String? _currentHiveId;
+  String? get currentHiveId => _currentHiveId;
 
-  /// Liste des événements de dépassement de seuil
+  /// Liste des événements
   List<ThresholdEvent> _events = [];
   List<ThresholdEvent> get events => _events;
 
@@ -24,28 +25,43 @@ class ThresholdEventService extends ChangeNotifier {
   /// Abonnement au stream Firebase
   StreamSubscription? _eventsSubscription;
 
-  /// Limite du nombre d'événements à récupérer
-  final int _limit;
-
   /// Constructeur
-  ThresholdEventService(this._firebaseService, {int limit = 50})
-      : _limit = limit {
+  ThresholdEventService(this._firebaseService);
+
+  /// Définit la ruche active et configure l'écouteur
+  void setCurrentHive(String hiveId) {
+    _currentHiveId = hiveId;
+    _cancelCurrentSubscription();
     _setupEventsListener();
+    notifyListeners();
+  }
+
+  /// Annule l'abonnement actuel
+  void _cancelCurrentSubscription() {
+    _eventsSubscription?.cancel();
+    _eventsSubscription = null;
   }
 
   /// Configure l'écouteur d'événements
   void _setupEventsListener() {
+    if (_currentHiveId == null) {
+      debugPrint('⚠️ No hive selected, cannot setup threshold events listener');
+      return;
+    }
+
     try {
-      _eventsSubscription = _firebaseService
-          .getLatestEntriesStream(_path, _limit)
-          .listen((event) {
+      final path = 'hives/$_currentHiveId/threshold_events';
+
+      _eventsSubscription =
+          _firebaseService.getDataStream(path).listen((event) {
         if (event.snapshot.exists) {
           try {
             // Convertir les données de façon sécurisée
             if (event.snapshot.value is Map) {
               final rawData = event.snapshot.value as Map<Object?, Object?>;
-              final Map<String, dynamic> data = MapConverter.convertToStringDynamicMap(rawData);
-              
+              final Map<String, dynamic> data =
+                  MapConverter.convertToStringDynamicMap(rawData);
+
               _processEventsData(data);
             } else {
               debugPrint('⚠️ Les données reçues ne sont pas au format Map');
@@ -58,7 +74,8 @@ class ThresholdEventService extends ChangeNotifier {
             _eventsStreamController.addError(e);
           }
         } else {
-          debugPrint('⚠️ No threshold events data available');
+          debugPrint(
+              '⚠️ No threshold events data available for hive $_currentHiveId');
           _events = [];
           _eventsStreamController.add(_events);
           notifyListeners();
@@ -80,9 +97,13 @@ class ThresholdEventService extends ChangeNotifier {
       // Convertir chaque entrée en objet ThresholdEvent
       data.forEach((key, value) {
         try {
-          final event =
-              ThresholdEvent.fromRealtimeDB(value as Map<String, dynamic>, key);
-          _events.add(event);
+          if (value is Map<String, dynamic>) {
+            // Adapter le format des événements à la structure actuelle
+            final event = _parseThresholdEvent(value, key);
+            if (event != null) {
+              _events.add(event);
+            }
+          }
         } catch (e) {
           debugPrint('⚠️ Error parsing threshold event: $e');
         }
@@ -94,22 +115,60 @@ class ThresholdEventService extends ChangeNotifier {
       _eventsStreamController.add(_events);
       notifyListeners();
 
-      debugPrint('🚨 ${_events.length} threshold events updated');
+      debugPrint(
+          '📊 ${_events.length} threshold events updated for hive $_currentHiveId');
     } catch (e) {
       debugPrint('❌ Error processing threshold events data: $e');
     }
   }
 
+  /// Parse un événement de seuil depuis le format actuel de Firebase
+  ThresholdEvent? _parseThresholdEvent(Map<String, dynamic> data, String id) {
+    try {
+      final timestamp = data['timestamp'] as int?;
+      if (timestamp == null) return null;
+
+      ThresholdEventType type;
+      if (data['event'] == 'threshold_exceeded') {
+        type = ThresholdEventType.exceeded;
+      } else if (data['event'] == 'threshold_ended') {
+        type = ThresholdEventType.normal;
+      } else {
+        return null; // Type d'événement non reconnu
+      }
+
+      return ThresholdEvent(
+        id: id,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp),
+        temperature: (data['temperature'] as num?)?.toDouble() ?? 0.0,
+        humidity: (data['humidity'] as num?)?.toDouble() ?? 0.0,
+        eventType: type,
+        thresholdHigh: (data['threshold'] as num?)?.toDouble() ?? 28.0,
+        thresholdLow: (data['threshold'] as num?)?.toDouble() ?? 15.0,
+      );
+    } catch (e) {
+      debugPrint('❌ Error parsing threshold event: $e');
+      return null;
+    }
+  }
+
   /// Récupère les événements une seule fois
   Future<List<ThresholdEvent>> getThresholdEvents() async {
+    if (_currentHiveId == null) {
+      debugPrint('⚠️ No hive selected, cannot get threshold events');
+      return [];
+    }
+
     try {
-      final data = await _firebaseService.getLatestEntries(_path, _limit);
+      final path = 'hives/$_currentHiveId/threshold_events';
+      final data = await _firebaseService.getData(path);
 
       if (data != null) {
         _processEventsData(data);
         return _events;
       } else {
-        debugPrint('⚠️ No threshold events data available');
+        debugPrint(
+            '⚠️ No threshold events data available for hive $_currentHiveId');
         _events = [];
         _eventsStreamController.add(_events);
         notifyListeners();
@@ -140,7 +199,8 @@ class ThresholdEventService extends ChangeNotifier {
       );
 
       final eventData = event.toMap();
-      final eventId = await _firebaseService.pushData(_path, eventData);
+      final eventId = await _firebaseService.pushData(
+          'hives/$_currentHiveId/threshold_events', eventData);
 
       debugPrint('✅ New threshold event created with ID: $eventId');
 

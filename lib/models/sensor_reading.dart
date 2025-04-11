@@ -25,7 +25,8 @@ class SensorReading extends Equatable {
   /// Créer une instance à partir des données de la base de données en temps réel
   factory SensorReading.fromRealtimeDB(Map<String, dynamic> data, String id) {
     try {
-      // Déterminer le type de capteur
+      // Pour la nouvelle structure, on reçoit directement les champs temperature et humidity
+      // Déterminer le type de capteur (si pas explicite)
       String sensorType;
       if (data.containsKey('temperature')) {
         sensorType = 'temperature';
@@ -37,7 +38,7 @@ class SensorReading extends Equatable {
         sensorType = 'unknown';
       }
 
-      // Déterminer la valeur
+      // Déterminer la valeur selon le type détecté
       double value;
       if (sensorType == 'temperature' && data.containsKey('temperature')) {
         value = (data['temperature'] as num).toDouble();
@@ -52,9 +53,9 @@ class SensorReading extends Equatable {
       // Déterminer l'unité
       String unit;
       if (sensorType == 'temperature') {
-        unit = '°C';
+        unit = data['unit_temperature'] as String? ?? '°C';
       } else if (sensorType == 'humidity') {
-        unit = '%';
+        unit = data['unit_humidity'] as String? ?? '%';
       } else if (data.containsKey('unit')) {
         unit = data['unit'] as String? ?? '';
       } else {
@@ -66,32 +67,63 @@ class SensorReading extends Equatable {
           data['sensorId'] as String? ??
           'unknown';
 
+      // Timestamp
+      int timestampMs;
+      if (data.containsKey('timestamp')) {
+        timestampMs = data['timestamp'] as int;
+      } else {
+        timestampMs = DateTime.now().millisecondsSinceEpoch;
+      }
+
       return SensorReading(
         id: id,
         sensorId: sensorId,
         type: sensorType,
         value: value,
         unit: unit,
-        timestamp:
-            DateTime.fromMillisecondsSinceEpoch(data['timestamp'] as int),
+        timestamp: DateTime.fromMillisecondsSinceEpoch(timestampMs),
         metadata: data['metadata'] as Map<String, dynamic>?,
       );
     } catch (e) {
-      print('! Error parsing sensor reading: $e');
-      rethrow;
+      print('! Error parsing sensor reading: $e - Data: $data');
+      // Retourner une lecture factice plutôt que de lancer une exception
+      return SensorReading(
+        id: id,
+        sensorId: 'error',
+        type: 'error',
+        value: 0.0,
+        unit: '',
+        timestamp: DateTime.now(),
+        metadata: {'error': e.toString()},
+      );
     }
   }
 
   /// Convertir en Map pour la base de données en temps réel
   Map<String, dynamic> toRealtimeDBMap() {
-    return {
+    final result = <String, dynamic>{
       'sensor_id': sensorId,
-      'type': type,
-      'value': value,
-      'unit': unit,
       'timestamp': timestamp.millisecondsSinceEpoch,
-      'metadata': metadata,
     };
+
+    // Ajouter le bon champ selon le type
+    if (type == 'temperature') {
+      result['temperature'] = value;
+      result['unit_temperature'] = unit;
+    } else if (type == 'humidity') {
+      result['humidity'] = value;
+      result['unit_humidity'] = unit;
+    } else {
+      result['type'] = type;
+      result['value'] = value;
+      result['unit'] = unit;
+    }
+
+    if (metadata != null) {
+      result['metadata'] = metadata;
+    }
+
+    return result;
   }
 
   /// Constructeur à partir des données Firestore
@@ -112,7 +144,16 @@ class SensorReading extends Equatable {
       );
     } catch (e) {
       print('! Error parsing Firestore sensor reading: $e');
-      rethrow;
+      // Retourner une lecture factice plutôt que de lancer une exception
+      return SensorReading(
+        id: id,
+        sensorId: 'error',
+        type: 'error',
+        value: 0.0,
+        unit: '',
+        timestamp: DateTime.now(),
+        metadata: {'error': e.toString()},
+      );
     }
   }
 
@@ -123,7 +164,7 @@ class SensorReading extends Equatable {
       'type': type,
       'value': value,
       'unit': unit,
-      'timestamp': timestamp,
+      'timestamp': timestamp.millisecondsSinceEpoch,
       'metadata': metadata,
     };
   }

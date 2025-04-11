@@ -6,6 +6,8 @@ import '../widgets/sensor_readings_chart.dart';
 import '../widgets/threshold_events_widget.dart';
 import '../widgets/threshold_config_widget.dart';
 import '../services/sensor_service.dart';
+import '../models/hive.dart';
+import '../models/apiary.dart';
 import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,6 +20,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _timeoutExpired = false;
   Timer? _timeoutTimer;
+  String? _selectedHiveId;
+  List<Apiary> _apiaries = [];
+  List<Hive> _hives = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -28,6 +34,46 @@ class _HomeScreenState extends State<HomeScreen> {
         _timeoutExpired = true;
       });
     });
+
+    // Charger les données initiales
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    final sensorService = Provider.of<SensorService>(context, listen: false);
+
+    if (sensorService.isInitialized) {
+      try {
+        // Récupérer les ruchers
+        _apiaries = await sensorService.getApiaries();
+
+        if (_apiaries.isNotEmpty) {
+          // Récupérer les ruches du premier rucher
+          _hives = await sensorService.getHivesForApiary(_apiaries.first.id);
+
+          if (_hives.isNotEmpty) {
+            // Sélectionner la première ruche
+            setState(() {
+              _selectedHiveId = _hives.first.id;
+              _isLoading = false;
+            });
+          } else {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        } else {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        debugPrint('❌ Error loading initial data: $e');
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -57,30 +103,96 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: !sensorService.isInitialized
+      body: !sensorService.isInitialized || _isLoading
           ? _buildLoadingScreen()
-          : RefreshIndicator(
-              onRefresh: () async {
-                // Rafraîchir toutes les données lors d'un swipe vers le bas
-                await Provider.of<SensorService>(context, listen: false)
-                    .refreshAllData();
-              },
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    CurrentStateWidget(
-                      hiveId: 'current',
-                      sensorService: Provider.of<SensorService>(context),
+          : _selectedHiveId == null
+              ? _buildNoHivesScreen()
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    // Rafraîchir toutes les données lors d'un swipe vers le bas
+                    await Provider.of<SensorService>(context, listen: false)
+                        .refreshAllData();
+                    await _loadInitialData();
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Sélecteur de ruche
+                        if (_hives.length > 1) _buildHiveSelector(),
+
+                        CurrentStateWidget(
+                          hiveId: _selectedHiveId!,
+                          sensorService: Provider.of<SensorService>(context),
+                        ),
+                        ThresholdConfigWidget(),
+                        SensorReadingsChart(),
+                        ThresholdEventsWidget(),
+                      ],
                     ),
-                    ThresholdConfigWidget(),
-                    SensorReadingsChart(),
-                    ThresholdEventsWidget(),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+    );
+  }
+
+  Widget _buildHiveSelector() {
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: DropdownButton<String>(
+          value: _selectedHiveId,
+          isExpanded: true,
+          hint: const Text('Sélectionner une ruche'),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              setState(() {
+                _selectedHiveId = newValue;
+              });
+            }
+          },
+          items: _hives.map<DropdownMenuItem<String>>((Hive hive) {
+            return DropdownMenuItem<String>(
+              value: hive.id,
+              child: Text(hive.name),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoHivesScreen() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.hive_outlined,
+            size: 64,
+            color: Colors.amber,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Aucune ruche disponible',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Ajoutez une ruche pour commencer',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.go('/apiaries');
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Ajouter une ruche'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -135,6 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () {
                   setState(() {
                     _timeoutExpired = false;
+                    _isLoading = true;
                   });
                   _timeoutTimer?.cancel();
                   _timeoutTimer = Timer(const Duration(seconds: 10), () {
@@ -145,6 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Force rebuild to retry connection
                   Provider.of<SensorService>(context, listen: false)
                       .refreshAllData();
+                  _loadInitialData();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,

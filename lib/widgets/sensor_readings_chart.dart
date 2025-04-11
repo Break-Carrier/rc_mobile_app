@@ -7,7 +7,12 @@ import '../models/time_filter.dart';
 import '../services/sensor_service.dart';
 
 class SensorReadingsChart extends StatefulWidget {
-  const SensorReadingsChart({super.key});
+  final List<SensorReading>? readings;
+
+  const SensorReadingsChart({
+    super.key,
+    this.readings,
+  });
 
   @override
   State<SensorReadingsChart> createState() => _SensorReadingsChartState();
@@ -35,27 +40,30 @@ class _SensorReadingsChartState extends State<SensorReadingsChart> {
             const SizedBox(height: 16),
             SizedBox(
               height: 300,
-              child: StreamBuilder<List<SensorReading>>(
-                stream: sensorService.getSensorReadings(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting &&
-                      !snapshot.hasData) {
-                    return _buildLoadingIndicator();
-                  }
+              child: widget.readings != null
+                  ? _buildChartWithData(widget.readings!)
+                  : StreamBuilder<List<SensorReading>>(
+                      stream: sensorService.getSensorReadings(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                                ConnectionState.waiting &&
+                            !snapshot.hasData) {
+                          return _buildLoadingIndicator();
+                        }
 
-                  if (snapshot.hasError) {
-                    return _buildErrorDisplay(snapshot.error.toString());
-                  }
+                        if (snapshot.hasError) {
+                          return _buildErrorDisplay(snapshot.error.toString());
+                        }
 
-                  final readings = snapshot.data ?? [];
+                        final readings = snapshot.data ?? [];
 
-                  if (readings.isEmpty) {
-                    return _buildNoDataDisplay();
-                  }
+                        if (readings.isEmpty) {
+                          return _buildNoDataDisplay();
+                        }
 
-                  return _buildChart(readings);
-                },
-              ),
+                        return _buildChart(readings);
+                      },
+                    ),
             ),
           ],
         ),
@@ -494,5 +502,12 @@ class _SensorReadingsChartState extends State<SensorReadingsChart> {
     if (readings.length <= 60) return 5;
     if (readings.length <= 120) return 10;
     return readings.length / 10;
+  }
+
+  Widget _buildChartWithData(List<SensorReading> readings) {
+    if (readings.isEmpty) {
+      return _buildNoDataDisplay();
+    }
+    return _buildChart(readings);
   }
 }

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../services/sensor_service.dart';
+import '../models/hive.dart';
+import '../models/current_state.dart';
 
-class HiveDetailsScreen extends StatelessWidget {
+class HiveDetailsScreen extends StatefulWidget {
   final String hiveId;
 
   const HiveDetailsScreen({
@@ -10,73 +14,191 @@ class HiveDetailsScreen extends StatelessWidget {
   });
 
   @override
+  State<HiveDetailsScreen> createState() => _HiveDetailsScreenState();
+}
+
+class _HiveDetailsScreenState extends State<HiveDetailsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Définir la ruche active au chargement
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final sensorService = Provider.of<SensorService>(context, listen: false);
+      sensorService.setCurrentHive(widget.hiveId);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final sensorService = Provider.of<SensorService>(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ruche $hiveId'),
+        title: FutureBuilder<Hive?>(
+          future: sensorService.getHiveById(widget.hiveId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('Chargement...');
+            }
+
+            if (snapshot.hasData) {
+              return Text(snapshot.data!.name);
+            }
+
+            return Text('Ruche ${widget.hiveId}');
+          },
+        ),
       ),
-      body: Column(
-        children: [
-          // En-tête avec les informations principales
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                const CircleAvatar(
-                  radius: 40,
-                  child: Icon(Icons.hive, size: 40),
+      body: StreamBuilder<CurrentState?>(
+        stream: sensorService.getCurrentState(),
+        builder: (context, snapshot) {
+          final currentState = snapshot.data;
+          final hasData = currentState != null;
+
+          return Column(
+            children: [
+              // En-tête avec les informations principales
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.amber,
+                      child: Icon(Icons.hive, size: 40, color: Colors.white),
+                    ),
+                    const SizedBox(height: 16),
+                    FutureBuilder<Hive?>(
+                      future: sensorService.getHiveById(widget.hiveId),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        }
+
+                        if (snapshot.hasData) {
+                          return Column(
+                            children: [
+                              Text(
+                                snapshot.data!.name,
+                                style:
+                                    Theme.of(context).textTheme.headlineSmall,
+                              ),
+                              if (snapshot.data!.description != null) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  snapshot.data!.description!,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ],
+                          );
+                        }
+
+                        return Text(
+                          'Ruche ${widget.hiveId}',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      hasData
+                          ? 'Dernière mise à jour: ${_formatTimestamp(currentState.timestamp)}'
+                          : 'Aucune donnée disponible',
+                    ),
+                    if (hasData) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildCurrentStateItem(
+                            'Température',
+                            '${currentState.temperature.toStringAsFixed(1)}°C',
+                            Icons.thermostat,
+                            Colors.redAccent,
+                          ),
+                          const SizedBox(width: 24),
+                          _buildCurrentStateItem(
+                            'Humidité',
+                            '${currentState.humidity.toStringAsFixed(1)}%',
+                            Icons.water_drop,
+                            Colors.blueAccent,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Ruche $hiveId',
-                  style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              // Navigation vers les sous-pages
+              Expanded(
+                child: GridView.count(
+                  padding: const EdgeInsets.all(16),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  children: [
+                    _buildNavigationCard(
+                      context,
+                      'Lectures des capteurs',
+                      Icons.sensors,
+                      () => context.go('/hive/${widget.hiveId}/readings'),
+                    ),
+                    _buildNavigationCard(
+                      context,
+                      'Alertes',
+                      Icons.notifications,
+                      () => context.go('/hive/${widget.hiveId}/alerts'),
+                    ),
+                    _buildNavigationCard(
+                      context,
+                      'Configuration',
+                      Icons.settings,
+                      () {
+                        // TODO: Implémenter la navigation vers la configuration
+                      },
+                    ),
+                    _buildNavigationCard(
+                      context,
+                      'Historique',
+                      Icons.history,
+                      () {
+                        // TODO: Implémenter la navigation vers l'historique
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                const Text('Dernière mise à jour: il y a 5 minutes'),
-              ],
-            ),
-          ),
-          // Navigation vers les sous-pages
-          Expanded(
-            child: GridView.count(
-              padding: const EdgeInsets.all(16),
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              children: [
-                _buildNavigationCard(
-                  context,
-                  'Lectures des capteurs',
-                  Icons.sensors,
-                  () => context.go('/hive/$hiveId/readings'),
-                ),
-                _buildNavigationCard(
-                  context,
-                  'Alertes',
-                  Icons.notifications,
-                  () => context.go('/hive/$hiveId/alerts'),
-                ),
-                _buildNavigationCard(
-                  context,
-                  'Configuration',
-                  Icons.settings,
-                  () {
-                    // TODO: Implémenter la navigation vers la configuration
-                  },
-                ),
-                _buildNavigationCard(
-                  context,
-                  'Historique',
-                  Icons.history,
-                  () {
-                    // TODO: Implémenter la navigation vers l'historique
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildCurrentStateItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 32),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12),
+        ),
+      ],
     );
   }
 
@@ -108,5 +230,22 @@ class HiveDetailsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inMinutes < 1) {
+      return 'à l\'instant';
+    } else if (difference.inMinutes < 60) {
+      return 'il y a ${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''}';
+    } else if (difference.inHours < 24) {
+      return 'il y a ${difference.inHours} heure${difference.inHours > 1 ? 's' : ''}';
+    } else if (difference.inDays < 7) {
+      return 'il y a ${difference.inDays} jour${difference.inDays > 1 ? 's' : ''}';
+    } else {
+      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+    }
   }
 }

@@ -8,8 +8,9 @@ import 'firebase_service.dart';
 class CurrentStateService extends ChangeNotifier {
   final FirebaseService _firebaseService;
 
-  /// Chemin vers la collection dans Firebase
-  static const String _path = 'current_state';
+  /// ID de la ruche actuellement sélectionnée
+  String? _currentHiveId;
+  String? get currentHiveId => _currentHiveId;
 
   /// État actuel des capteurs
   CurrentState? _currentState;
@@ -23,15 +24,32 @@ class CurrentStateService extends ChangeNotifier {
   StreamSubscription? _stateSubscription;
 
   /// Constructeur
-  CurrentStateService(this._firebaseService) {
+  CurrentStateService(this._firebaseService);
+
+  /// Définit la ruche active et configure l'écouteur
+  void setCurrentHive(String hiveId) {
+    _currentHiveId = hiveId;
+    _cancelCurrentSubscription();
     _setupStateListener();
+    notifyListeners();
+  }
+
+  /// Annule l'abonnement actuel
+  void _cancelCurrentSubscription() {
+    _stateSubscription?.cancel();
+    _stateSubscription = null;
   }
 
   /// Configure l'écouteur d'état
   void _setupStateListener() {
+    if (_currentHiveId == null) {
+      debugPrint('⚠️ No hive selected, cannot setup state listener');
+      return;
+    }
+
     try {
-      _stateSubscription =
-          _firebaseService.getDataStream(_path).listen((event) {
+      final path = 'hives/$_currentHiveId/current_state';
+      _stateSubscription = _firebaseService.getDataStream(path).listen((event) {
         if (event.snapshot.exists) {
           try {
             // Convertir les données de façon sécurisée
@@ -40,11 +58,8 @@ class CurrentStateService extends ChangeNotifier {
               final Map<String, dynamic> data =
                   MapConverter.convertToStringDynamicMap(rawData);
 
-              _currentState = CurrentState.fromRealtimeDB(data);
-              _stateStreamController.add(_currentState);
-              notifyListeners();
-              debugPrint(
-                  '📊 Current state updated: ${_currentState?.temperature}°C, ${_currentState?.humidity}%');
+              // Adaptation pour le format actuel
+              _processCurrentStateData(data);
             } else {
               debugPrint('⚠️ Les données reçues ne sont pas au format Map');
               _stateStreamController.add(null);
@@ -66,17 +81,74 @@ class CurrentStateService extends ChangeNotifier {
     }
   }
 
+  /// Traite les données de l'état actuel
+  void _processCurrentStateData(Map<String, dynamic> data) {
+    try {
+      final temperature = (data['temperature'] as num?)?.toDouble() ?? 0.0;
+      final humidity = (data['humidity'] as num?)?.toDouble() ?? 0.0;
+      final timestamp = data['lastUpdate'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(data['lastUpdate'] as int)
+          : DateTime.now();
+
+      // Récupérer les informations d'hystérésis
+      double thresholdHigh = 28.0; // Valeurs par défaut
+      double thresholdLow = 15.0;
+
+      if (data.containsKey('hysteresis') &&
+          data['hysteresis'] is Map &&
+          data['hysteresis']['temperature'] is Map) {
+        final tempHysteresis =
+            data['hysteresis']['temperature'] as Map<String, dynamic>;
+        final threshold =
+            (tempHysteresis['threshold'] as num?)?.toDouble() ?? 28.0;
+        final upperOffset =
+            (tempHysteresis['upper_offset'] as num?)?.toDouble() ?? 0.5;
+        final lowerOffset =
+            (tempHysteresis['lower_offset'] as num?)?.toDouble() ?? 0.5;
+
+        thresholdHigh = threshold;
+        thresholdLow = threshold - (lowerOffset * 2 + upperOffset * 2);
+      }
+
+      final isOverThreshold = data['isThresholdExceeded'] as bool? ?? false;
+
+      _currentState = CurrentState(
+        temperature: temperature,
+        humidity: humidity,
+        timestamp: timestamp,
+        thresholdHigh: thresholdHigh,
+        thresholdLow: thresholdLow,
+        isOverThreshold: isOverThreshold,
+        metadata: data['connectivity'] as Map<String, dynamic>?,
+      );
+
+      _stateStreamController.add(_currentState);
+      notifyListeners();
+
+      debugPrint(
+          '📊 Current state updated for hive $_currentHiveId: $temperature°C, $humidity%');
+    } catch (e) {
+      debugPrint('❌ Error processing current state data: $e');
+    }
+  }
+
   /// Récupère l'état actuel une seule fois
   Future<CurrentState?> getCurrentState() async {
+    if (_currentHiveId == null) {
+      debugPrint('⚠️ No hive selected, cannot get current state');
+      return null;
+    }
+
     try {
-      final data = await _firebaseService.getData(_path);
+      final path = 'hives/$_currentHiveId/current_state';
+      final data = await _firebaseService.getData(path);
+
       if (data != null) {
-        _currentState = CurrentState.fromRealtimeDB(data);
-        debugPrint(
-            '📊 Current state fetched: ${_currentState?.temperature}°C, ${_currentState?.humidity}%');
+        _processCurrentStateData(data);
         return _currentState;
       } else {
-        debugPrint('⚠️ No current state data available');
+        debugPrint(
+            '⚠️ No current state data available for hive $_currentHiveId');
         return null;
       }
     } catch (e) {
@@ -85,46 +157,9 @@ class CurrentStateService extends ChangeNotifier {
     }
   }
 
-  /// Met à jour les seuils de température
-  Future<void> updateThresholds(
-      double lowThreshold, double highThreshold) async {
-    try {
-      if (lowThreshold >= highThreshold) {
-        throw ArgumentError('Le seuil bas doit être inférieur au seuil haut');
-      }
-
-      // Vérifier si la température actuelle dépasse les nouveaux seuils
-      bool isOverThreshold = false;
-      if (_currentState != null) {
-        isOverThreshold = _currentState!.temperature > highThreshold ||
-            _currentState!.temperature < lowThreshold;
-      }
-
-      // Préparer les données à mettre à jour
-      final updateData = {
-        'threshold_low': lowThreshold,
-        'threshold_high': highThreshold,
-        'last_update': DateTime.now().millisecondsSinceEpoch,
-        'is_over_threshold': isOverThreshold,
-      };
-
-      await _firebaseService.updateData(_path, updateData);
-
-      debugPrint(
-          '✅ Thresholds updated: low=$lowThreshold, high=$highThreshold, isOverThreshold=$isOverThreshold');
-
-      // Actualiser l'état actuel
-      await getCurrentState();
-    } catch (e) {
-      debugPrint('❌ Error updating thresholds: $e');
-      rethrow;
-    }
-  }
-
   /// Vérifie si la température actuelle dépasse les seuils
   bool isTemperatureOverThreshold() {
     if (_currentState == null) return false;
-
     return _currentState!.isLowTemperature || _currentState!.isHighTemperature;
   }
 

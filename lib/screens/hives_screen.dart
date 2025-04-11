@@ -21,7 +21,7 @@ class HivesScreen extends StatelessWidget {
         title: const Text('Ruches'),
       ),
       body: FutureBuilder<List<Hive>>(
-        future: sensorService.getHivesByApiary(apiaryId),
+        future: sensorService.getHivesForApiary(apiaryId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(

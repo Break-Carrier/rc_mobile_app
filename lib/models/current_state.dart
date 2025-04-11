@@ -25,14 +25,85 @@ class CurrentState extends Equatable {
 
   /// Constructeur à partir des données Firestore
   factory CurrentState.fromFirestore(Map<String, dynamic> data) {
+    // Gérer les valeurs de date/timestamp
+    DateTime timestamp;
+    if (data['timestamp'] is Timestamp) {
+      timestamp = (data['timestamp'] as Timestamp).toDate();
+    } else if (data['lastUpdate'] is int) {
+      timestamp =
+          DateTime.fromMillisecondsSinceEpoch(data['lastUpdate'] as int);
+    } else if (data['last_update'] is int) {
+      timestamp =
+          DateTime.fromMillisecondsSinceEpoch(data['last_update'] as int);
+    } else {
+      timestamp = DateTime.now();
+    }
+
+    // Extraire les températures
+    double temperature = 0.0;
+    double humidity = 0.0;
+    bool isOverThreshold = false;
+    double thresholdHigh = 28.0;
+    double thresholdLow = 15.0;
+
+    // Valeurs de seuil et hystérésis
+    if (data.containsKey('hysteresis') &&
+        data['hysteresis'] is Map &&
+        (data['hysteresis'] as Map).containsKey('temperature')) {
+      final tempHysteresis = (data['hysteresis'] as Map)['temperature'];
+      if (tempHysteresis is Map) {
+        final threshold =
+            (tempHysteresis['threshold'] as num?)?.toDouble() ?? 28.0;
+        final upperOffset =
+            (tempHysteresis['upper_offset'] as num?)?.toDouble() ?? 0.5;
+        final lowerOffset =
+            (tempHysteresis['lower_offset'] as num?)?.toDouble() ?? 0.5;
+
+        thresholdHigh = threshold;
+        thresholdLow = threshold - (upperOffset + lowerOffset) * 2;
+      }
+    } else if (data.containsKey('threshold_high') &&
+        data.containsKey('threshold_low')) {
+      thresholdHigh = (data['threshold_high'] as num).toDouble();
+      thresholdLow = (data['threshold_low'] as num).toDouble();
+    }
+
+    // Valeurs de température et humidité
+    if (data.containsKey('temperature')) {
+      temperature = (data['temperature'] as num).toDouble();
+    }
+
+    if (data.containsKey('humidity')) {
+      humidity = (data['humidity'] as num).toDouble();
+    }
+
+    // État de dépassement de seuil
+    if (data.containsKey('isThresholdExceeded')) {
+      isOverThreshold = data['isThresholdExceeded'] as bool;
+    } else if (data.containsKey('is_over_threshold')) {
+      isOverThreshold = data['is_over_threshold'] as bool;
+    } else {
+      // Calculer si on dépasse le seuil
+      isOverThreshold =
+          temperature > thresholdHigh || temperature < thresholdLow;
+    }
+
+    // Métadonnées (connectivity ou autres informations)
+    Map<String, dynamic>? metadata;
+    if (data.containsKey('connectivity') && data['connectivity'] is Map) {
+      metadata = Map<String, dynamic>.from(data['connectivity'] as Map);
+    } else if (data.containsKey('metadata') && data['metadata'] is Map) {
+      metadata = Map<String, dynamic>.from(data['metadata'] as Map);
+    }
+
     return CurrentState(
-      temperature: (data['temperature'] as num).toDouble(),
-      humidity: (data['humidity'] as num).toDouble(),
-      timestamp: (data['timestamp'] as Timestamp).toDate(),
-      thresholdHigh: (data['threshold_high'] as num).toDouble(),
-      thresholdLow: (data['threshold_low'] as num).toDouble(),
-      isOverThreshold: data['is_over_threshold'] as bool,
-      metadata: data['metadata'] as Map<String, dynamic>?,
+      temperature: temperature,
+      humidity: humidity,
+      timestamp: timestamp,
+      thresholdHigh: thresholdHigh,
+      thresholdLow: thresholdLow,
+      isOverThreshold: isOverThreshold,
+      metadata: metadata,
     );
   }
 
@@ -41,11 +112,15 @@ class CurrentState extends Equatable {
     return {
       'temperature': temperature,
       'humidity': humidity,
-      'timestamp': timestamp,
-      'threshold_high': thresholdHigh,
-      'threshold_low': thresholdLow,
-      'is_over_threshold': isOverThreshold,
-      'metadata': metadata,
+      'lastUpdate': timestamp.millisecondsSinceEpoch,
+      'hysteresis': {
+        'temperature': {
+          'threshold': thresholdHigh,
+          'upper_offset': 0.5,
+          'lower_offset': 0.5
+        }
+      },
+      'isThresholdExceeded': isOverThreshold,
     };
   }
 

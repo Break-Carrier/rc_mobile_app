@@ -284,3 +284,4 @@ class _HiveDetailsView extends StatelessWidget {
     }
   }
 }
+ 

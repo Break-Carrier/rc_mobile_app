@@ -109,3 +109,4 @@ Chaque couche doit être testable indépendamment:
 - **Tests unitaires**: Pour la logique métier et les modèles
 - **Tests de widget**: Pour les composants UI
 - **Tests d'intégration**: Pour les flux complets à travers plusieurs couches
+ 

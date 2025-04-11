@@ -83,3 +83,4 @@ Cette feature est en cours de migration depuis l'architecture précédente. Les 
 2. Ajout des fonctionnalités manquantes et amélioration de l'UI
 3. Migration des écrans liés (lectures, alertes)
 4. Tests et optimisations
+ 

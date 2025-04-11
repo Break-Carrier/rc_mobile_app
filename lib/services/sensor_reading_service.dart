@@ -70,7 +70,7 @@ class SensorReadingService extends ChangeNotifier {
               final rawData = event.snapshot.value as Map<Object?, Object?>;
               final Map<String, dynamic> data =
                   MapConverter.convertToStringDynamicMap(rawData);
-
+              
               _processReadingsData(data);
             } else {
               debugPrint('⚠️ Les données reçues ne sont pas au format Map');

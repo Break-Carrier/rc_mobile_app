@@ -146,3 +146,4 @@ class HiveDetailsBloc extends Bloc<HiveDetailsEvent, HiveDetailsState> {
     return super.close();
   }
 }
+ 

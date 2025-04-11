@@ -467,11 +467,11 @@ class _ThresholdConfigWidgetState extends State<ThresholdConfigWidget> {
       children: [
         const Text(
           'Ajustez le seuil de température',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -479,40 +479,40 @@ class _ThresholdConfigWidgetState extends State<ThresholdConfigWidget> {
             Text(
               '${_minTemperature.toStringAsFixed(1)}°C',
               style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+                      ),
             Text(
               '${_maxTemperature.toStringAsFixed(1)}°C',
               style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
+                    ),
+                  ],
+                ),
         Slider(
-          value: _targetTemperature,
-          min: _minTemperature,
-          max: _maxTemperature,
+                    value: _targetTemperature,
+                    min: _minTemperature,
+                    max: _maxTemperature,
           divisions: ((_maxTemperature - _minTemperature) * 2).toInt(),
-          label: '${_targetTemperature.toStringAsFixed(1)}°C',
-          onChanged: (value) {
-            setState(() {
-              _targetTemperature = value;
-            });
-          },
-        ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
+                    label: '${_targetTemperature.toStringAsFixed(1)}°C',
+                    onChanged: (value) {
+                      setState(() {
+                        _targetTemperature = value;
+                      });
+                    },
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
             OutlinedButton(
-              onPressed: () {
-                setState(() {
-                  _isEditing = false;
+                      onPressed: () {
+                        setState(() {
+                          _isEditing = false;
                   _loadCurrentThresholds(); // Réinitialiser les valeurs
-                });
-              },
+                        });
+                      },
               style: OutlinedButton.styleFrom(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
+                    ),
               child: const Text('Annuler'),
             ),
             ElevatedButton(
@@ -528,9 +528,9 @@ class _ThresholdConfigWidgetState extends State<ThresholdConfigWidget> {
                     _targetTemperature, // Seuil principal
                   );
 
-                  setState(() {
-                    _isEditing = false;
-                  });
+                        setState(() {
+                          _isEditing = false;
+                        });
 
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -551,13 +551,13 @@ class _ThresholdConfigWidgetState extends State<ThresholdConfigWidget> {
                   }
                 }
               },
-              style: ElevatedButton.styleFrom(
+                      style: ElevatedButton.styleFrom(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               child: const Text('Enregistrer'),
-            ),
-          ],
+                    ),
+                  ],
         ),
       ],
     );

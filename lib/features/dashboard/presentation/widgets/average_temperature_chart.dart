@@ -274,3 +274,4 @@ class AverageTemperatureChart extends StatelessWidget {
     );
   }
 }
+ 

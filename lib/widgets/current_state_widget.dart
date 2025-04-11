@@ -1,409 +1,157 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
-import '../models/current_state.dart';
 import '../services/sensor_service.dart';
+import '../models/sensor_reading.dart';
 
 class CurrentStateWidget extends StatelessWidget {
-  const CurrentStateWidget({super.key});
+  final String hiveId;
+  final SensorService sensorService;
+
+  const CurrentStateWidget({
+    super.key,
+    required this.hiveId,
+    required this.sensorService,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final sensorService = Provider.of<SensorService>(context);
+    return StreamBuilder<List<SensorReading>>(
+      stream: sensorService.getCurrentReadings(hiveId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
 
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'État Actuel',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                  size: 48,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Erreur: ${snapshot.error}',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            StreamBuilder<CurrentState?>(
-              stream: sensorService.getCurrentState(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting &&
-                    sensorService.lastKnownState == null) {
-                  return _buildLoadingIndicator();
-                }
+          );
+        }
 
-                if (snapshot.hasError) {
-                  return _buildErrorDisplay(snapshot.error.toString());
-                }
+        final readings = snapshot.data;
+        if (readings == null || readings.isEmpty) {
+          return const Center(
+            child: Text('Aucune donnée disponible'),
+          );
+        }
 
-                final currentState =
-                    snapshot.data ?? sensorService.lastKnownState;
-
-                if (currentState == null) {
-                  return _buildNoDataDisplay();
-                }
-
-                return _buildStateDisplay(context, currentState);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingIndicator() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue.withAlpha(30),
-              shape: BoxShape.circle,
-            ),
-            child: const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 3,
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'État actuel',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  ...readings
+                      .map((reading) => _buildReadingTile(context, reading)),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Chargement des données...',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildErrorDisplay(String error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-            const SizedBox(height: 8),
-            Text(
-              'Erreur: $error',
-              style: const TextStyle(color: Colors.red),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoDataDisplay() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 20),
-      padding: const EdgeInsets.all(24),
+  Widget _buildReadingTile(BuildContext context, SensorReading reading) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.amber.withAlpha(15),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.amber.withAlpha(50)),
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.amber.withAlpha(30),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.info_outline,
-              color: Colors.amber,
-              size: 40,
+          Icon(
+            _getIconForType(reading.type),
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _getLabelForType(reading.type),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  '${reading.value} ${reading.unit}',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Aucune donnée disponible',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Utilisez le geste de glisser vers le bas pour actualiser les données',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.black54,
-              fontSize: 14,
-            ),
+          Text(
+            _formatTimestamp(reading.timestamp),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStateDisplay(BuildContext context, CurrentState state) {
-    final dateFormat = DateFormat('dd/MM/yyyy HH:mm:ss');
-    final lastUpdate = dateFormat.format(state.timestamp);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(10),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            border: Border.all(
-              color: Colors.red.withAlpha(50),
-              width: 1.5,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withAlpha(30),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.thermostat,
-                    color: _getTemperatureColor(state),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'Température',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ),
-                Text(
-                  '${state.temperature.toStringAsFixed(1)}°C',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: _getTemperatureColor(state),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(10),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            border: Border.all(
-              color: Colors.blue.withAlpha(50),
-              width: 1.5,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withAlpha(30),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.water_drop,
-                    color: Colors.blue,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'Humidité',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ),
-                Text(
-                  '${state.humidity.toStringAsFixed(1)}%',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(10),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            border: Border.all(
-              color: _getStatusColor(state).withAlpha(50),
-              width: 1.5,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(state).withAlpha(30),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _getStatusIcon(state),
-                    color: _getStatusColor(state),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'État',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(state).withAlpha(30),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: _getStatusColor(state).withAlpha(50),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _getStatusIcon(state),
-                        color: _getStatusColor(state),
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _getStatusText(state),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: _getStatusColor(state),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.update,
-              size: 14,
-              color: Colors.grey[600],
-            ),
-            const SizedBox(width: 4),
-            Text(
-              'Dernière mise à jour: $lastUpdate',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Color _getTemperatureColor(CurrentState state) {
-    if (state.isHighTemperature) {
-      return Colors.red;
-    } else if (state.isLowTemperature) {
-      return Colors.blue;
-    } else {
-      return Colors.green;
+  IconData _getIconForType(String type) {
+    switch (type.toLowerCase()) {
+      case 'temperature':
+        return Icons.thermostat;
+      case 'humidity':
+        return Icons.water_drop;
+      case 'weight':
+        return Icons.scale;
+      default:
+        return Icons.sensors;
     }
   }
 
-  Color _getStatusColor(CurrentState state) {
-    if (state.isHighTemperature) {
-      return Colors.red;
-    } else if (state.isLowTemperature) {
-      return Colors.blue;
-    } else {
-      return Colors.green;
+  String _getLabelForType(String type) {
+    switch (type.toLowerCase()) {
+      case 'temperature':
+        return 'Température';
+      case 'humidity':
+        return 'Humidité';
+      case 'weight':
+        return 'Poids';
+      default:
+        return type;
     }
   }
 
-  IconData _getStatusIcon(CurrentState state) {
-    if (state.isHighTemperature) {
-      return Icons.thermostat;
-    } else if (state.isLowTemperature) {
-      return Icons.ac_unit;
-    } else {
-      return Icons.check_circle;
-    }
-  }
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
 
-  String _getStatusText(CurrentState state) {
-    if (state.isHighTemperature) {
-      return 'Température élevée';
-    } else if (state.isLowTemperature) {
-      return 'Température basse';
+    if (difference.inMinutes < 1) {
+      return 'À l\'instant';
+    } else if (difference.inHours < 1) {
+      return 'Il y a ${difference.inMinutes} min';
+    } else if (difference.inDays < 1) {
+      return 'Il y a ${difference.inHours} h';
     } else {
-      return 'Température normale';
+      return 'Il y a ${difference.inDays} j';
     }
   }
 }

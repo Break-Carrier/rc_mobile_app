@@ -8,6 +8,7 @@ import 'firebase_service.dart';
 import 'current_state_service.dart';
 import 'sensor_reading_service.dart';
 import 'threshold_event_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Service principal qui coordonne tous les services de capteurs
 class SensorService extends ChangeNotifier {
@@ -15,6 +16,7 @@ class SensorService extends ChangeNotifier {
   CurrentStateService? _currentStateService;
   SensorReadingService? _sensorReadingService;
   ThresholdEventService? _thresholdEventService;
+  final FirebaseFirestore _firestore;
 
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
@@ -31,7 +33,9 @@ class SensorService extends ChangeNotifier {
   bool get isConnected => _firebaseService.isConnected;
 
   /// Constructeur
-  SensorService() : _firebaseService = FirebaseService() {
+  SensorService({FirebaseFirestore? firestore})
+      : _firebaseService = FirebaseService(),
+        _firestore = firestore ?? FirebaseFirestore.instance {
     _initializeServices();
   }
 
@@ -214,6 +218,59 @@ class SensorService extends ChangeNotifier {
     } catch (e) {
       debugPrint('❌ Error refreshing all data: $e');
     }
+  }
+
+  /// Récupère les lectures actuelles des capteurs pour une ruche donnée
+  Stream<List<SensorReading>> getCurrentReadings(String hiveId) {
+    if (!_areServicesReady()) {
+      return Stream.value([]);
+    }
+    return _firestore
+        .collection('hives')
+        .doc(hiveId)
+        .collection('readings')
+        .orderBy('timestamp', descending: true)
+        .limit(10)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => SensorReading.fromFirestore(doc.data(), doc.id))
+          .toList();
+    });
+  }
+
+  /// Ajoute une nouvelle lecture de capteur
+  Future<void> addReading(String hiveId, SensorReading reading) async {
+    if (!_areServicesReady()) {
+      debugPrint('❌ Services not initialized, cannot add reading');
+      return;
+    }
+    await _firestore
+        .collection('hives')
+        .doc(hiveId)
+        .collection('readings')
+        .add(reading.toMap());
+  }
+
+  /// Récupère l'historique des lectures pour une période donnée
+  Future<List<SensorReading>> getReadingsHistory(
+      String hiveId, DateTime start, DateTime end) async {
+    if (!_areServicesReady()) {
+      return [];
+    }
+    final snapshot = await _firestore
+        .collection('hives')
+        .doc(hiveId)
+        .collection('readings')
+        .where('timestamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+            isLessThanOrEqualTo: Timestamp.fromDate(end))
+        .orderBy('timestamp', descending: true)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => SensorReading.fromFirestore(doc.data(), doc.id))
+        .toList();
   }
 
   @override

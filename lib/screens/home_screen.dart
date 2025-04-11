@@ -127,7 +127,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           sensorService: Provider.of<SensorService>(context),
                         ),
                         ThresholdConfigWidget(),
-                        SensorReadingsChart(),
+
+                        // Graphique de température moyenne pour tout le rucher
+                        _apiaries.isNotEmpty
+                            ? SensorReadingsChart(
+                                apiaryId: _apiaries.first.id,
+                                showAverageTemperature: true,
+                              )
+                            : SensorReadingsChart(),
+
                         ThresholdEventsWidget(),
                       ],
                     ),

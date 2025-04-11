@@ -4,11 +4,13 @@ import '../models/current_state.dart';
 import '../models/sensor_reading.dart';
 import '../models/threshold_event.dart';
 import '../models/time_filter.dart';
+import '../models/apiary.dart';
+import '../models/hive.dart';
+import '../utils/map_converter.dart';
 import 'firebase_service.dart';
 import 'current_state_service.dart';
 import 'sensor_reading_service.dart';
 import 'threshold_event_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Service principal qui coordonne tous les services de capteurs
 class SensorService extends ChangeNotifier {
@@ -16,7 +18,6 @@ class SensorService extends ChangeNotifier {
   CurrentStateService? _currentStateService;
   SensorReadingService? _sensorReadingService;
   ThresholdEventService? _thresholdEventService;
-  final FirebaseFirestore _firestore;
 
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
@@ -33,9 +34,7 @@ class SensorService extends ChangeNotifier {
   bool get isConnected => _firebaseService.isConnected;
 
   /// Constructeur
-  SensorService({FirebaseFirestore? firestore})
-      : _firebaseService = FirebaseService(),
-        _firestore = firestore ?? FirebaseFirestore.instance {
+  SensorService() : _firebaseService = FirebaseService() {
     _initializeServices();
   }
 
@@ -220,36 +219,149 @@ class SensorService extends ChangeNotifier {
     }
   }
 
+  /// Récupère tous les ruchers
+  Future<List<Apiary>> getApiaries() async {
+    if (!_areServicesReady()) {
+      return [];
+    }
+
+    try {
+      final data = await _firebaseService.getData('apiaries');
+
+      if (data == null || data.isEmpty) {
+        debugPrint('⚠️ No apiaries found');
+        return [];
+      }
+
+      final apiaries = <Apiary>[];
+      data.forEach((key, value) {
+        if (value is Map<String, dynamic>) {
+          apiaries.add(Apiary.fromFirestore(value, key));
+        }
+      });
+
+      return apiaries;
+    } catch (e) {
+      debugPrint('❌ Error fetching apiaries: $e');
+      return [];
+    }
+  }
+
+  /// Récupère toutes les ruches d'un rucher
+  Future<List<Hive>> getHivesByApiary(String apiaryId) async {
+    if (!_areServicesReady()) {
+      return [];
+    }
+
+    try {
+      final data = await _firebaseService.getData('hives');
+
+      if (data == null || data.isEmpty) {
+        debugPrint('⚠️ No hives found');
+        return [];
+      }
+
+      final hives = <Hive>[];
+      data.forEach((key, value) {
+        if (value is Map<String, dynamic> && value['apiary_id'] == apiaryId) {
+          hives.add(Hive.fromFirestore(value, key));
+        }
+      });
+
+      return hives;
+    } catch (e) {
+      debugPrint('❌ Error fetching hives for apiary $apiaryId: $e');
+      return [];
+    }
+  }
+
+  /// Récupère une ruche par son ID
+  Future<Hive?> getHive(String hiveId) async {
+    if (!_areServicesReady()) {
+      return null;
+    }
+
+    try {
+      final data = await _firebaseService.getData('hives/$hiveId');
+
+      if (data == null) {
+        debugPrint('⚠️ Hive $hiveId not found');
+        return null;
+      }
+
+      return Hive.fromFirestore(data, hiveId);
+    } catch (e) {
+      debugPrint('❌ Error fetching hive $hiveId: $e');
+      return null;
+    }
+  }
+
   /// Récupère les lectures actuelles des capteurs pour une ruche donnée
   Stream<List<SensorReading>> getCurrentReadings(String hiveId) {
     if (!_areServicesReady()) {
       return Stream.value([]);
     }
-    return _firestore
-        .collection('hives')
-        .doc(hiveId)
-        .collection('readings')
-        .orderBy('timestamp', descending: true)
-        .limit(10)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => SensorReading.fromFirestore(doc.data(), doc.id))
-          .toList();
+
+    return _firebaseService.getDataStream('sensor_readings').map((event) {
+      if (event.snapshot.exists && event.snapshot.value is Map) {
+        final data = MapConverter.convertToStringDynamicMap(
+            event.snapshot.value as Map<Object?, Object?>);
+
+        final readings = <SensorReading>[];
+        data.forEach((key, value) {
+          if (value is Map<String, dynamic> && value['sensorId'] == hiveId) {
+            readings.add(SensorReading.fromRealtimeDB(value, key));
+          }
+        });
+
+        // Trier par timestamp (plus récent en premier)
+        readings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+        // Limiter les résultats
+        if (readings.length > 10) {
+          readings.length = 10;
+        }
+
+        return readings;
+      }
+      return <SensorReading>[];
     });
   }
 
   /// Ajoute une nouvelle lecture de capteur
-  Future<void> addReading(String hiveId, SensorReading reading) async {
+  Future<void> addReading(SensorReading reading) async {
     if (!_areServicesReady()) {
       debugPrint('❌ Services not initialized, cannot add reading');
       return;
     }
-    await _firestore
-        .collection('hives')
-        .doc(hiveId)
-        .collection('readings')
-        .add(reading.toMap());
+
+    // Ajouter la lecture à la collection de lectures
+    await _firebaseService.pushData(
+        'sensor_readings', reading.toRealtimeDBMap());
+
+    // Mettre à jour l'état actuel de la ruche
+    if (reading.type == 'temperature' || reading.type == 'humidity') {
+      final hiveData =
+          await _firebaseService.getData('hives/${reading.sensorId}');
+
+      if (hiveData != null) {
+        final currentState =
+            hiveData['current_state'] as Map<String, dynamic>? ?? {};
+
+        if (reading.type == 'temperature') {
+          currentState['temperature'] = reading.value;
+        } else if (reading.type == 'humidity') {
+          currentState['humidity'] = reading.value;
+        }
+
+        currentState['timestamp'] = reading.timestamp.millisecondsSinceEpoch;
+
+        await _firebaseService.updateData('hives/${reading.sensorId}', {
+          'current_state': currentState,
+          'updated_at': DateTime.now().millisecondsSinceEpoch,
+        });
+      }
+    }
   }
 
   /// Récupère l'historique des lectures pour une période donnée
@@ -258,19 +370,63 @@ class SensorService extends ChangeNotifier {
     if (!_areServicesReady()) {
       return [];
     }
-    final snapshot = await _firestore
-        .collection('hives')
-        .doc(hiveId)
-        .collection('readings')
-        .where('timestamp',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(start),
-            isLessThanOrEqualTo: Timestamp.fromDate(end))
-        .orderBy('timestamp', descending: true)
-        .get();
 
-    return snapshot.docs
-        .map((doc) => SensorReading.fromFirestore(doc.data(), doc.id))
-        .toList();
+    try {
+      final data = await _firebaseService.getData('sensor_readings');
+
+      if (data == null || data.isEmpty) {
+        return [];
+      }
+
+      final readings = <SensorReading>[];
+      data.forEach((key, value) {
+        if (value is Map<String, dynamic> && value['sensorId'] == hiveId) {
+          final reading = SensorReading.fromRealtimeDB(value, key);
+          if (reading.timestamp.isAfter(start) &&
+              reading.timestamp.isBefore(end)) {
+            readings.add(reading);
+          }
+        }
+      });
+
+      // Trier par timestamp (plus récent en premier)
+      readings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+      return readings;
+    } catch (e) {
+      debugPrint('❌ Error fetching readings history: $e');
+      return [];
+    }
+  }
+
+  /// Récupère les événements de seuil pour une ruche donnée
+  Future<List<ThresholdEvent>> getThresholdEventsForHive(String hiveId) async {
+    if (!_areServicesReady()) {
+      return [];
+    }
+
+    try {
+      final data = await _firebaseService.getData('threshold_events');
+
+      if (data == null || data.isEmpty) {
+        return [];
+      }
+
+      final events = <ThresholdEvent>[];
+      data.forEach((key, value) {
+        if (value is Map<String, dynamic> && value['hive_id'] == hiveId) {
+          events.add(ThresholdEvent.fromRealtimeDB(value, key));
+        }
+      });
+
+      // Trier par timestamp (plus récent en premier)
+      events.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+      return events;
+    } catch (e) {
+      debugPrint('❌ Error fetching threshold events: $e');
+      return [];
+    }
   }
 
   @override

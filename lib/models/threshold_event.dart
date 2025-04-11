@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Type d'événement de seuil
 enum ThresholdEventType {
@@ -48,8 +49,33 @@ class ThresholdEvent {
       humidity: (data['humidity'] as num).toDouble(),
       timestamp: DateTime.fromMillisecondsSinceEpoch(data['timestamp'] as int),
       eventType: type,
-      thresholdHigh: (data['threshold_high'] as num).toDouble(),
-      thresholdLow: (data['threshold_low'] as num).toDouble(),
+      thresholdHigh: (data['threshold_high'] as num?)?.toDouble() ?? 30.0,
+      thresholdLow: (data['threshold_low'] as num?)?.toDouble() ?? 15.0,
+    );
+  }
+
+  /// Constructeur à partir des données Firestore
+  factory ThresholdEvent.fromFirestore(Map<String, dynamic> data, String id) {
+    ThresholdEventType type;
+
+    // Déterminer le type d'événement
+    final eventStr = data['event'] as String;
+    if (eventStr == 'threshold_exceeded') {
+      type = ThresholdEventType.exceeded;
+    } else {
+      type = ThresholdEventType.normal;
+    }
+
+    return ThresholdEvent(
+      id: id,
+      temperature: (data['temperature'] as num).toDouble(),
+      humidity: (data['humidity'] as num).toDouble(),
+      timestamp: data['timestamp'] is int
+          ? DateTime.fromMillisecondsSinceEpoch(data['timestamp'] as int)
+          : (data['timestamp'] as Timestamp).toDate(),
+      eventType: type,
+      thresholdHigh: (data['threshold_high'] as num?)?.toDouble() ?? 30.0,
+      thresholdLow: (data['threshold_low'] as num?)?.toDouble() ?? 15.0,
     );
   }
 

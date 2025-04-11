@@ -18,42 +18,23 @@ class FirebaseService {
   /// Écouteur d'état de connexion
   StreamSubscription? _connectedSubscription;
 
-  /// Vérifie si la configuration minimale est valide
-  bool _checkMinimalConfig() {
-    final options = DefaultFirebaseOptions.currentPlatform;
-
-    // Pour Realtime Database, nous avons besoin au minimum de l'URL de la base
-    // et d'une clé d'API ou token d'authentification
-    final hasValidDbUrl = options.databaseURL?.isNotEmpty ?? false;
-    final hasValidAuth = options.apiKey.isNotEmpty;
-
-    if (!hasValidDbUrl) {
-      debugPrint('⚠️ ERREUR: URL de base de données manquante ou invalide!');
-      return false;
-    }
-
-    if (!hasValidAuth) {
-      debugPrint('⚠️ ERREUR: Clé API manquante!');
-      return false;
-    }
-
-    return true;
-  }
-
   /// Initialise le service et écoute les changements de connectivité
   Future<void> initialize() async {
     try {
-      // Vérifier la configuration minimale
-      if (!_checkMinimalConfig()) {
+      // Vérifier que la configuration est valide
+      if (!DefaultFirebaseOptions.isConfigValid()) {
         throw Exception(
-            'Configuration Firebase minimale invalide. Au minimum, databaseURL et apiKey sont requis.');
+            'Configuration Firebase invalide. Vérifiez vos variables d\'environnement.');
       }
 
-      // Définir l'URL de la base de données
-      final dbUrl = DefaultFirebaseOptions.currentPlatform.databaseURL;
-      if (dbUrl?.isNotEmpty ?? false) {
-        debugPrint('📊 Utilisation de l\'URL de base de données: $dbUrl');
-        _database.databaseURL = dbUrl;
+      // Configurer l'URL de la base de données
+      final options = DefaultFirebaseOptions.currentPlatform;
+      if (options.databaseURL?.isNotEmpty ?? false) {
+        debugPrint(
+            '📊 Utilisation de l\'URL de base de données: ${options.databaseURL}');
+        _database.databaseURL = options.databaseURL;
+      } else {
+        throw Exception('URL de la base de données Firebase manquante.');
       }
 
       // Écouter l'état de connectivité à Firebase

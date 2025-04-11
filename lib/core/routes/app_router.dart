@@ -5,6 +5,8 @@ import '../../screens/hive_details_screen.dart';
 import '../../screens/settings_screen.dart';
 import '../../screens/sensor_readings_screen.dart';
 import '../../screens/alerts_screen.dart';
+import '../../screens/apiaries_screen.dart';
+import '../../screens/hives_screen.dart';
 
 /// Configuration des routes de l'application
 class AppRouter {
@@ -24,6 +26,21 @@ class AppRouter {
             path: '/',
             name: 'home',
             builder: (context, state) => const HomeScreen(),
+          ),
+          // Route des ruchers
+          GoRoute(
+            path: '/apiaries',
+            name: 'apiaries',
+            builder: (context, state) => const ApiariesScreen(),
+          ),
+          // Route des ruches d'un rucher
+          GoRoute(
+            path: '/apiary/:id',
+            name: 'apiary_details',
+            builder: (context, state) {
+              final apiaryId = state.pathParameters['id']!;
+              return HivesScreen(apiaryId: apiaryId);
+            },
           ),
           // Route des détails d'une ruche
           GoRoute(
@@ -91,7 +108,7 @@ class ScaffoldWithBottomNavBar extends StatelessWidget {
               context.go('/');
               break;
             case 1:
-              context.go('/hive/current');
+              context.go('/apiaries');
               break;
             case 2:
               context.go('/alerts');
@@ -111,7 +128,7 @@ class ScaffoldWithBottomNavBar extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.hive_outlined),
             selectedIcon: Icon(Icons.hive),
-            label: 'Ruches',
+            label: 'Ruchers',
           ),
           NavigationDestination(
             icon: Icon(Icons.notifications_outlined),
@@ -132,7 +149,9 @@ class ScaffoldWithBottomNavBar extends StatelessWidget {
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/settings')) return 3;
     if (location.startsWith('/alerts')) return 2;
-    if (location.startsWith('/hive')) return 1;
+    if (location.startsWith('/apiaries') ||
+        location.startsWith('/apiary') ||
+        location.startsWith('/hive')) return 1;
     return 0;
   }
 }

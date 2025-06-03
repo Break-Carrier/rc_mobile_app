@@ -11,9 +11,9 @@ class SensorReadingsScreen extends StatefulWidget {
   final String hiveId;
 
   const SensorReadingsScreen({
-    Key? key,
+    super.key,
     required this.hiveId,
-  }) : super(key: key);
+  });
 
   @override
   State<SensorReadingsScreen> createState() => _SensorReadingsScreenState();

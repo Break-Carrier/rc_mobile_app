@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../screens/home_screen.dart';
 import '../../screens/settings_screen.dart';
 import '../../screens/sensor_readings_screen.dart';
 import '../../screens/alerts_screen.dart';
@@ -152,7 +151,9 @@ class ScaffoldWithBottomNavBar extends StatelessWidget {
     if (location.startsWith('/alerts')) return 2;
     if (location.startsWith('/apiaries') ||
         location.startsWith('/apiary') ||
-        location.startsWith('/hive')) return 1;
+        location.startsWith('/hive')) {
+      return 1;
+    }
     return 0;
   }
 }

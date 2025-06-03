@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../models/time_filter.dart';
 import '../../../../services/sensor_service.dart';
 import '../../../../widgets/current_state_widget.dart';
 import '../../../../widgets/threshold_config_widget.dart';

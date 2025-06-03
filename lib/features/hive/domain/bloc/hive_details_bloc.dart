@@ -51,7 +51,7 @@ class HiveDetailsLoaded extends HiveDetailsState {
     CurrentState? currentState,
   }) {
     return HiveDetailsLoaded(
-      hiveId: this.hiveId,
+      hiveId: hiveId,
       hive: hive ?? this.hive,
       currentState: currentState ?? this.currentState,
     );

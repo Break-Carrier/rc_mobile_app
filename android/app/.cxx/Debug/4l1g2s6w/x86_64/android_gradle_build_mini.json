@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "C:\\Projects\\redline_mobile_apk\\flutter\\packages\\flutter_tools\\gradle\\src\\main\\groovy\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\there\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "D:\\MS2D\\01_projet_ruche\\developpement\\rc_mobile_app\\android\\app\\.cxx\\Debug\\4l1g2s6w\\x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\there\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "D:\\MS2D\\01_projet_ruche\\developpement\\rc_mobile_app\\android\\app\\.cxx\\Debug\\4l1g2s6w\\x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

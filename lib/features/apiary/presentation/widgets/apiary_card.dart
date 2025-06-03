@@ -104,21 +104,21 @@ class ApiaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (apiary.location != null) ...[
-            Row(
-              children: [
-                const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    apiary.location,
-                    style: const TextStyle(color: Colors.grey),
-                  ),
+          ...[
+          Row(
+            children: [
+              const Icon(Icons.location_on, size: 16, color: Colors.grey),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  apiary.location,
+                  style: const TextStyle(color: Colors.grey),
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-          ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
           if (apiary.description != null) ...[
             Text(
               apiary.description!,

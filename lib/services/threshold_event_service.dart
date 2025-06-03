@@ -61,7 +61,7 @@ class ThresholdEventService extends ChangeNotifier {
               final rawData = event.snapshot.value as Map<Object?, Object?>;
               final Map<String, dynamic> data =
                   MapConverter.convertToStringDynamicMap(rawData);
-
+              
               _processEventsData(data);
             } else {
               debugPrint('⚠️ Les données reçues ne sont pas au format Map');
@@ -101,7 +101,7 @@ class ThresholdEventService extends ChangeNotifier {
             // Adapter le format des événements à la structure actuelle
             final event = _parseThresholdEvent(value, key);
             if (event != null) {
-              _events.add(event);
+          _events.add(event);
             }
           }
         } catch (e) {

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../screens/home_screen.dart';
-import '../../screens/hive_details_screen.dart';
 import '../../screens/settings_screen.dart';
 import '../../screens/sensor_readings_screen.dart';
 import '../../screens/alerts_screen.dart';
 import '../../screens/apiaries_screen.dart';
 import '../../screens/hives_screen.dart';
+import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/hive/presentation/screens/hive_details_screen.dart';
 
 /// Configuration des routes de l'application
 class AppRouter {
@@ -21,11 +21,11 @@ class AppRouter {
           return ScaffoldWithBottomNavBar(child: child);
         },
         routes: [
-          // Route de la page d'accueil
+          // Route de la page d'accueil (tableau de bord)
           GoRoute(
             path: '/',
             name: 'home',
-            builder: (context, state) => const HomeScreen(),
+            builder: (context, state) => const DashboardScreen(),
           ),
           // Route des ruchers
           GoRoute(
@@ -151,7 +151,9 @@ class ScaffoldWithBottomNavBar extends StatelessWidget {
     if (location.startsWith('/alerts')) return 2;
     if (location.startsWith('/apiaries') ||
         location.startsWith('/apiary') ||
-        location.startsWith('/hive')) return 1;
+        location.startsWith('/hive')) {
+      return 1;
+    }
     return 0;
   }
 }

@@ -6,7 +6,6 @@ import '../models/threshold_event.dart';
 import '../models/time_filter.dart';
 import '../models/apiary.dart';
 import '../models/hive.dart';
-import '../utils/map_converter.dart';
 import 'firebase_service.dart';
 import 'current_state_service.dart';
 import 'sensor_reading_service.dart';

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import '../widgets/current_state_widget.dart';
 import '../core/widgets/chart/sensor_chart.dart';
-import '../widgets/threshold_events_widget.dart';
+import '../core/widgets/events/threshold_events.dart';
 import '../core/widgets/threshold/threshold_config.dart';
 import '../services/sensor_service.dart';
 import '../models/hive.dart';
@@ -136,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               )
                             : SensorChart(),
 
-                        ThresholdEventsWidget(),
+                        ThresholdEvents(),
                       ],
                     ),
                   ),

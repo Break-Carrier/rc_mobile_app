@@ -122,27 +122,10 @@ class _SensorChartState extends State<SensorChart> {
 
     final mockReadings = MockData.generateMockReadings(
       hiveId: widget.hiveId ?? 'mock_hive_01',
-      timeRange: _getTimeRangeFromFilter(timeFilter),
+      timeRange: timeFilter.duration,
     );
 
     return _buildChartWithData(mockReadings);
-  }
-
-  Duration _getTimeRangeFromFilter(TimeFilter filter) {
-    switch (filter) {
-      case TimeFilter.oneHour:
-        return const Duration(hours: 1);
-      case TimeFilter.sixHours:
-        return const Duration(hours: 6);
-      case TimeFilter.oneDay:
-        return const Duration(days: 1);
-      case TimeFilter.oneWeek:
-        return const Duration(days: 7);
-      case TimeFilter.oneMonth:
-        return const Duration(days: 30);
-      default:
-        return const Duration(days: 1);
-    }
   }
 
   Widget _buildAverageTemperatureChart(
@@ -202,7 +185,29 @@ class _SensorChartState extends State<SensorChart> {
         titlesData: _buildTitlesData(readings),
         borderData: FlBorderData(show: false),
         gridData: const FlGridData(
-            show: true, drawHorizontalLine: true, drawVerticalLine: false),
+          show: true,
+          drawHorizontalLine: true,
+          drawVerticalLine: false,
+        ),
+        lineTouchData: LineTouchData(
+          enabled: true,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                final date =
+                    DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                final isTemp = spot.barIndex == 0 && _showTemperature;
+                final unit = isTemp ? '°C' : '%';
+                final type = isTemp ? 'Temp' : 'Hum';
+
+                return LineTooltipItem(
+                  '$type: ${spot.y.toStringAsFixed(1)}$unit\n${DateFormat('HH:mm').format(date)}',
+                  const TextStyle(color: Colors.white, fontSize: 12),
+                );
+              }).toList();
+            },
+          ),
+        ),
       ),
     );
   }
@@ -219,6 +224,10 @@ class _SensorChartState extends State<SensorChart> {
       color: Colors.red,
       barWidth: 2,
       dotData: const FlDotData(show: false),
+      belowBarData: BarAreaData(
+        show: true,
+        color: Colors.red.withValues(alpha: 0.1),
+      ),
     );
   }
 
@@ -234,23 +243,37 @@ class _SensorChartState extends State<SensorChart> {
       color: Colors.blue,
       barWidth: 2,
       dotData: const FlDotData(show: false),
+      belowBarData: BarAreaData(
+        show: true,
+        color: Colors.blue.withValues(alpha: 0.1),
+      ),
     );
   }
 
   FlTitlesData _buildTitlesData(List<SensorReading> readings) {
     return FlTitlesData(
-      leftTitles: const AxisTitles(
-        sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+      leftTitles: AxisTitles(
+        sideTitles: SideTitles(
+          showTitles: true,
+          reservedSize: 50,
+          getTitlesWidget: (value, meta) {
+            return Text(
+              value.toStringAsFixed(0),
+              style: const TextStyle(fontSize: 10, color: Colors.grey),
+            );
+          },
+        ),
       ),
       bottomTitles: AxisTitles(
         sideTitles: SideTitles(
           showTitles: true,
           reservedSize: 30,
+          interval: _calculateTimeInterval(readings),
           getTitlesWidget: (value, meta) {
             final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
             return Text(
               DateFormat('HH:mm').format(date),
-              style: const TextStyle(fontSize: 10),
+              style: const TextStyle(fontSize: 10, color: Colors.grey),
             );
           },
         ),
@@ -258,5 +281,21 @@ class _SensorChartState extends State<SensorChart> {
       topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
     );
+  }
+
+  double? _calculateTimeInterval(List<SensorReading> readings) {
+    if (readings.length < 2) return null;
+
+    final span = readings.last.timestamp.millisecondsSinceEpoch -
+        readings.first.timestamp.millisecondsSinceEpoch;
+
+    // Adapter l'intervalle selon la plage de temps
+    if (span < Duration.millisecondsPerHour * 2) {
+      return Duration.millisecondsPerMinute * 15.0; // 15 min
+    } else if (span < Duration.millisecondsPerDay) {
+      return Duration.millisecondsPerHour * 1.0; // 1 heure
+    } else {
+      return Duration.millisecondsPerHour * 6.0; // 6 heures
+    }
   }
 }

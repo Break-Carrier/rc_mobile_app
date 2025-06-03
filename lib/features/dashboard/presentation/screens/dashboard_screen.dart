@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 
 import '../../../../services/sensor_service.dart';
 import '../../../../widgets/current_state_widget.dart';
-import '../../../../widgets/threshold_config_widget.dart';
-import '../../../../widgets/threshold_events_widget.dart';
+import '../../../../core/widgets/threshold/threshold_config.dart';
+import '../../../../core/widgets/events/threshold_events.dart';
 import '../../domain/bloc/dashboard_bloc.dart';
 import '../widgets/average_temperature_chart.dart';
 
@@ -78,7 +78,7 @@ class _DashboardView extends StatelessWidget {
               sensorService: Provider.of<SensorService>(context),
             ),
 
-            const ThresholdConfigWidget(),
+            const ThresholdConfig(),
 
             // Graphique de température moyenne pour tout le rucher
             state.apiaries.isNotEmpty
@@ -93,7 +93,7 @@ class _DashboardView extends StatelessWidget {
                   )
                 : const SizedBox(),
 
-            const ThresholdEventsWidget(),
+            const ThresholdEvents(),
           ],
         ),
       ),
@@ -222,4 +222,3 @@ class _DashboardView extends StatelessWidget {
     );
   }
 }
- 

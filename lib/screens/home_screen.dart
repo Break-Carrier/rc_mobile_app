@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import '../widgets/current_state_widget.dart';
-import '../widgets/sensor_readings_chart.dart';
-import '../widgets/threshold_events_widget.dart';
-import '../widgets/threshold_config_widget.dart';
+import '../core/widgets/chart/sensor_chart.dart';
+import '../core/widgets/events/threshold_events.dart';
+import '../core/widgets/threshold/threshold_config.dart';
 import '../services/sensor_service.dart';
 import '../models/hive.dart';
 import '../models/apiary.dart';
@@ -126,17 +126,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           hiveId: _selectedHiveId!,
                           sensorService: Provider.of<SensorService>(context),
                         ),
-                        ThresholdConfigWidget(),
+                        ThresholdConfig(),
 
                         // Graphique de température moyenne pour tout le rucher
                         _apiaries.isNotEmpty
-                            ? SensorReadingsChart(
+                            ? SensorChart(
                                 apiaryId: _apiaries.first.id,
                                 showAverageTemperature: true,
                               )
-                            : SensorReadingsChart(),
+                            : SensorChart(),
 
-                        ThresholdEventsWidget(),
+                        ThresholdEvents(),
                       ],
                     ),
                   ),

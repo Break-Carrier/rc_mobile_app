@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/models/apiary.dart';
+import '../../../../core/models/apiary_status.dart';
 
 class ApiaryOverviewCard extends StatelessWidget {
   final Apiary apiary;
@@ -150,44 +151,22 @@ class ApiaryOverviewCard extends StatelessWidget {
     // TODO: Calculer le statut réel basé sur les données des capteurs
     final status = _getApiaryStatus();
 
-    late IconData icon;
-    late Color color;
-    late String label;
-
-    switch (status) {
-      case ApiaryStatus.normal:
-        icon = Icons.check_circle;
-        color = Colors.green;
-        label = 'Normal';
-        break;
-      case ApiaryStatus.warning:
-        icon = Icons.warning;
-        color = Colors.orange;
-        label = 'Attention';
-        break;
-      case ApiaryStatus.critical:
-        icon = Icons.error;
-        color = Colors.red;
-        label = 'Critique';
-        break;
-    }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: status.color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: status.color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
+          Icon(status.icon, size: 16, color: status.color),
           const SizedBox(width: 4),
           Text(
-            label,
+            status.label,
             style: TextStyle(
-              color: color,
+              color: status.color,
               fontWeight: FontWeight.w600,
               fontSize: 12,
             ),
@@ -251,10 +230,4 @@ class ApiaryOverviewCard extends StatelessWidget {
       return null;
     }
   }
-}
-
-enum ApiaryStatus {
-  normal,
-  warning,
-  critical,
 }

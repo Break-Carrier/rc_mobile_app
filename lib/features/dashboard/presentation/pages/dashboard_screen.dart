@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/bloc/dashboard_bloc.dart';
-import '../widgets/global_stats_card.dart';
-import '../widgets/apiary_overview_card.dart';
-import '../widgets/critical_alerts_section.dart';
 import '../../../../core/models/apiary.dart';
+import '../../../../core/models/apiary_status.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -26,11 +24,13 @@ class DashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tableau de Bord'),
+        title: const Text('🏡 Ruche Connectée'),
         centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.blue),
             onPressed: () =>
                 context.read<DashboardBloc>().add(RefreshDashboardData()),
           ),
@@ -132,34 +132,20 @@ class _LoadedContent extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Statistiques globales
-            GlobalStatsCard(
-              apiaryCount: state.apiaries.length,
-              hiveCount: _getTotalHiveCount(state.apiaries),
-              alertCount: _getCriticalAlertCount(),
-            ),
+            // Résumé Global
+            _buildGlobalSummary(context),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // Section Mes Ruchers
-            _buildSectionHeader(context, 'Mes Ruchers', Icons.home_work),
-            const SizedBox(height: 16),
+            // Mes Ruchers
+            _buildApiariesSection(context),
 
-            // Cards des ruchers
-            ...state.apiaries.map((apiary) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: ApiaryOverviewCard(
-                    apiary: apiary,
-                    onTap: () => _navigateToApiary(context, apiary),
-                  ),
-                )),
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 24),
+            // Alertes Récentes
+            _buildRecentAlertsSection(context),
 
-            // Alertes critiques
-            const CriticalAlertsSection(),
-
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Actions rapides
             _buildQuickActions(context),
@@ -169,31 +155,336 @@ class _LoadedContent extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(
-      BuildContext context, String title, IconData icon) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          color: Theme.of(context).primaryColor,
-          size: 28,
+  Widget _buildGlobalSummary(BuildContext context) {
+    final totalHives = _getTotalHiveCount(state.apiaries);
+    final alertCount = _getCriticalAlertCount();
+    final avgTemp = _getGlobalAverageTemperature();
+    final avgHumidity = _getGlobalAverageHumidity();
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [Colors.blue.shade50, Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-        const SizedBox(width: 12),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).primaryColor,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.dashboard, color: Colors.blue, size: 28),
+                const SizedBox(width: 12),
+                Text(
+                  'Résumé Global',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade800,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Première ligne de statistiques
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatItem(
+                    '📊 ${state.apiaries.length}',
+                    'Ruchers',
+                    Colors.blue,
+                  ),
+                ),
+                Expanded(
+                  child: _buildStatItem(
+                    '🏠 $totalHives',
+                    'Ruches',
+                    Colors.amber.shade700,
+                  ),
+                ),
+                Expanded(
+                  child: _buildStatItem(
+                    '⚠️ $alertCount',
+                    'Alertes',
+                    alertCount > 0 ? Colors.red : Colors.green,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Deuxième ligne de statistiques
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatItem(
+                    '🌡️ ${avgTemp.toStringAsFixed(1)}°C',
+                    'Temp. moy.',
+                    Colors.red.shade600,
+                  ),
+                ),
+                Expanded(
+                  child: _buildStatItem(
+                    '💧 ${avgHumidity.toStringAsFixed(0)}%',
+                    'Humid. moy.',
+                    Colors.blue.shade600,
+                  ),
+                ),
+                Expanded(
+                  child: _buildStatItem(
+                    '✅ ${_getHealthyHivesCount()}',
+                    'OK',
+                    Colors.green.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String value, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: color.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApiariesSection(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.home_work, color: Colors.green, size: 28),
+                const SizedBox(width: 12),
+                Text(
+                  'Mes Ruchers',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade800,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Liste compacte des ruchers
+            ...state.apiaries
+                .map((apiary) => _buildCompactApiaryCard(context, apiary)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactApiaryCard(BuildContext context, Apiary apiary) {
+    final status = _getApiaryStatus(apiary);
+    final statusIcon = status.emoji;
+    final statusColor = status.color;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () => _navigateToApiary(context, apiary),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              Text(
+                '🏡',
+                style: const TextStyle(fontSize: 24),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      apiary.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${apiary.hiveIds.length} ruches • ${apiary.location}',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                statusIcon,
+                style: const TextStyle(fontSize: 20),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.grey.shade400,
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildRecentAlertsSection(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.notification_important,
+                    color: Colors.red, size: 28),
+                const SizedBox(width: 12),
+                Text(
+                  'Alertes Récentes',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade800,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Liste d'alertes récentes (simulées pour l'instant)
+            _buildRecentAlertItem(
+              '⚠️',
+              'Ruche Alpha - Température élevée',
+              '28.5°C détectée il y a 15 min',
+              Colors.orange,
+            ),
+            const SizedBox(height: 8),
+            _buildRecentAlertItem(
+              '❌',
+              'Ruche Forest-2 - Capteur déconnecté',
+              'Aucune donnée depuis 2h',
+              Colors.red,
+            ),
+            const SizedBox(height: 12),
+
+            // Bouton voir toutes les alertes
+            Center(
+              child: TextButton.icon(
+                onPressed: () => context.go('/alerts'),
+                icon: const Icon(Icons.list_alt),
+                label: const Text('Voir toutes les alertes'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.blue,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentAlertItem(
+      String icon, String title, String subtitle, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildQuickActions(BuildContext context) {
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -208,8 +499,9 @@ class _LoadedContent extends StatelessWidget {
               children: [
                 Expanded(
                   child: _ActionButton(
-                    icon: Icons.add,
+                    icon: Icons.add_home_work,
                     label: 'Ajouter Rucher',
+                    color: Colors.green,
                     onTap: () {
                       // TODO: Navigation vers ajout rucher
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -221,8 +513,23 @@ class _LoadedContent extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _ActionButton(
+                    icon: Icons.analytics,
+                    label: 'Statistiques',
+                    color: Colors.blue,
+                    onTap: () {
+                      // TODO: Navigation vers statistiques
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Fonction à implémenter')),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _ActionButton(
                     icon: Icons.settings,
                     label: 'Paramètres',
+                    color: Colors.grey,
                     onTap: () => context.go('/settings'),
                   ),
                 ),
@@ -240,7 +547,30 @@ class _LoadedContent extends StatelessWidget {
 
   int _getCriticalAlertCount() {
     // TODO: Implémenter le compte des alertes critiques
-    return 0;
+    return 2; // Simulé pour l'instant
+  }
+
+  double _getGlobalAverageTemperature() {
+    // TODO: Calculer la température moyenne réelle
+    return 24.5; // Simulé pour l'instant
+  }
+
+  double _getGlobalAverageHumidity() {
+    // TODO: Calculer l'humidité moyenne réelle
+    return 65.0; // Simulé pour l'instant
+  }
+
+  int _getHealthyHivesCount() {
+    // TODO: Calculer le nombre de ruches en bonne santé
+    return _getTotalHiveCount(state.apiaries) - 2; // Simulé pour l'instant
+  }
+
+  ApiaryStatus _getApiaryStatus(Apiary apiary) {
+    // TODO: Implémenter la logique de calcul du statut
+    if (apiary.hiveIds.isEmpty) return ApiaryStatus.critical;
+    if (apiary.name.contains('Forêt')) return ApiaryStatus.warning;
+    if (apiary.name.contains('Prairie')) return ApiaryStatus.critical;
+    return ApiaryStatus.normal;
   }
 
   void _navigateToApiary(BuildContext context, Apiary apiary) {
@@ -251,11 +581,13 @@ class _LoadedContent extends StatelessWidget {
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color color;
   final VoidCallback onTap;
 
   const _ActionButton({
     required this.icon,
     required this.label,
+    required this.color,
     required this.onTap,
   });
 
@@ -267,25 +599,26 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+            color: color.withValues(alpha: 0.3),
           ),
         ),
         child: Column(
           children: [
             Icon(
               icon,
-              color: Theme.of(context).primaryColor,
-              size: 32,
+              color: color,
+              size: 28,
             ),
             const SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
-                color: Theme.of(context).primaryColor,
+                color: color,
                 fontWeight: FontWeight.w600,
+                fontSize: 12,
               ),
               textAlign: TextAlign.center,
             ),

@@ -50,12 +50,21 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Firebase related
-google-services.json
-GoogleService-Info.plist
-firebase_options.dart
-.firebase/
-firebase-debug.log
+# Android build artifacts (should not be in Git)
+android/app/.cxx/
+**/.cxx/
+**/configure_fingerprint.bin
+**/index-*.json
+android/app/build/
+android/.gradle/
+android/local.properties
+android/gradle.properties
+android/key.properties
+
+# Firebase generated files
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
 
 # iOS/XCode related
 **/ios/**/*.mode1v3

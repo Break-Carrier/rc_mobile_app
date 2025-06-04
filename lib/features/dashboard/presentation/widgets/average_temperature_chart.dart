@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import '../../../../models/sensor_reading.dart';
-import '../../../../models/time_filter.dart';
+import '../../../../core/models/sensor_reading.dart';
+import '../../../../core/models/time_filter.dart';
 
 class AverageTemperatureChart extends StatelessWidget {
   final List<SensorReading> readings;
@@ -263,7 +263,7 @@ class AverageTemperatureChart extends StatelessWidget {
             dotData: FlDotData(show: tempReadings.length < 10),
             belowBarData: BarAreaData(
               show: true,
-              color: Colors.red.withOpacity(0.15),
+              color: Colors.red.withValues(alpha: 0.15),
             ),
           ),
         ],
@@ -274,4 +274,3 @@ class AverageTemperatureChart extends StatelessWidget {
     );
   }
 }
- 

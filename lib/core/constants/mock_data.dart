@@ -1,6 +1,6 @@
-import '../../models/sensor_reading.dart';
-import '../../models/hive.dart';
-import '../../models/apiary.dart';
+import '../models/sensor_reading.dart';
+import '../models/hive.dart';
+import '../models/apiary.dart';
 
 class MockData {
   static List<SensorReading> generateMockReadings({

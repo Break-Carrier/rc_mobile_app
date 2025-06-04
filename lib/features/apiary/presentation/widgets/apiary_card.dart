@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../models/apiary.dart';
+import '../../../../core/models/apiary.dart';
 
 /// Widget pour afficher un rucher sous forme de carte
 class ApiaryCard extends StatelessWidget {
@@ -50,7 +50,7 @@ class ApiaryCard extends StatelessWidget {
                 image: NetworkImage(imageUrl),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.3),
+                  Colors.black.withValues(alpha: 0.3),
                   BlendMode.darken,
                 ),
               )
@@ -105,20 +105,20 @@ class ApiaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ...[
-          Row(
-            children: [
-              const Icon(Icons.location_on, size: 16, color: Colors.grey),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  apiary.location,
-                  style: const TextStyle(color: Colors.grey),
+            Row(
+              children: [
+                const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    apiary.location,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-        ],
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
           if (apiary.description != null) ...[
             Text(
               apiary.description!,

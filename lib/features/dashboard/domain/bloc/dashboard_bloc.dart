@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../models/apiary.dart';
-import '../../../../models/hive.dart';
-import '../../../../models/sensor_reading.dart';
-import '../../../../models/time_filter.dart';
+import '../../../../core/models/apiary.dart';
+import '../../../../core/models/hive.dart';
+import '../../../../core/models/sensor_reading.dart';
+import '../../../../core/models/time_filter.dart';
 import '../../data/repositories/dashboard_repository.dart';
-import '../../../../services/sensor_service.dart';
+import '../../../../core/factories/service_factory.dart';
 
 // Events
 abstract class DashboardEvent {}
@@ -74,14 +74,12 @@ class DashboardError extends DashboardState {
 
 // BLoC
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
-  final SensorService _sensorService;
+  final coordinator = ServiceFactory.getHiveServiceCoordinator();
   final DashboardRepository _dashboardRepository;
 
   DashboardBloc({
-    required SensorService sensorService,
     DashboardRepository? dashboardRepository,
-  })  : _sensorService = sensorService,
-        _dashboardRepository = dashboardRepository ?? DashboardRepository(),
+  })  : _dashboardRepository = dashboardRepository ?? DashboardRepository(),
         super(DashboardInitial()) {
     on<LoadDashboardData>(_onLoadDashboardData);
     on<RefreshDashboardData>(_onRefreshDashboardData);
@@ -94,7 +92,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       emit(DashboardLoading());
 
       // Récupérer les ruchers et les ruches
-      final apiaries = await _sensorService.getApiaries();
+      final apiaries = await coordinator.getApiaries();
 
       if (apiaries.isEmpty) {
         emit(DashboardLoaded(
@@ -107,19 +105,19 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       }
 
       // Récupérer les ruches du premier rucher
-      final hives = await _sensorService.getHivesForApiary(apiaries.first.id);
+      final hives = await coordinator.getHivesForApiary(apiaries.first.id);
 
       // Récupérer les données de température moyenne
       final averageTemperatureReadings = await _dashboardRepository
           .getAverageTemperatureForApiary(apiaries.first.id, event.timeFilter);
 
-      // Mettre à jour le time filter dans le service aussi
-      await _sensorService.setTimeFilter(event.timeFilter);
+      // Mettre à jour le time filter dans le coordinator aussi
+      coordinator.setTimeFilter(event.timeFilter);
 
       // Sélectionner la première ruche si disponible
       final selectedHiveId = hives.isNotEmpty ? hives.first.id : null;
       if (selectedHiveId != null) {
-        _sensorService.setCurrentHive(selectedHiveId);
+        coordinator.setActiveHive(selectedHiveId);
       }
 
       emit(DashboardLoaded(
@@ -140,7 +138,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       RefreshDashboardData event, Emitter<DashboardState> emit) async {
     if (state is DashboardLoaded) {
       final currentState = state as DashboardLoaded;
-      await _sensorService.refreshAllData();
+      await coordinator.refreshAllData();
 
       add(LoadDashboardData(timeFilter: currentState.currentTimeFilter));
     } else {
@@ -153,8 +151,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     if (state is DashboardLoaded) {
       final currentState = state as DashboardLoaded;
 
-      // Mettre à jour le filtre dans le service
-      await _sensorService.setTimeFilter(event.timeFilter);
+      // Mettre à jour le filtre dans le coordinator
+      coordinator.setTimeFilter(event.timeFilter);
 
       if (currentState.apiaries.isNotEmpty) {
         // Récupérer les nouvelles données de température moyenne
@@ -174,4 +172,3 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     }
   }
 }
- 

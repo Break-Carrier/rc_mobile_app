@@ -1,112 +1,169 @@
-# Architecture du Projet Ruche Connectée
+# 🏗️ Architecture Clean Code - Flutter IoT App
 
-Ce document décrit l'architecture du projet d'application mobile Ruche Connectée.
+## 📋 **Vue d'ensemble**
 
-## Architecture globale
+Cette application Flutter suit les principes du **Clean Architecture** et du **Clean Code**, organisant le code en couches distinctes avec des responsabilités claires.
 
-Le projet suit une architecture inspirée de Clean Architecture avec une organisation par fonctionnalités (features). Cette approche offre plusieurs avantages:
+## 🎯 **Principes appliqués**
 
-- **Séparation des préoccupations**: Chaque composant a une responsabilité unique
-- **Facilité de maintenance**: Les modifications sont isolées à des modules spécifiques
-- **Testabilité**: Chaque couche peut être testée indépendamment
-- **Scalabilité**: De nouvelles fonctionnalités peuvent être ajoutées facilement
+- ✅ **Single Responsibility Principle** - Chaque classe a une seule responsabilité
+- ✅ **Open/Closed Principle** - Ouvert à l'extension, fermé à la modification
+- ✅ **Dependency Inversion** - Dépendance sur les abstractions, pas les concrétions
+- ✅ **Separation of Concerns** - Séparation claire entre les couches
+- ✅ **Repository Pattern** - Abstraction de l'accès aux données
+- ✅ **BLoC Pattern** - Gestion d'état prévisible et testable
 
-## Structure de dossiers
+## 🏗️ **Structure du projet**
 
 ```
 lib/
-  ├── core/                # Fonctionnalités communes à toute l'application
-  │    ├── constants/     # Constantes globales
-  │    ├── routes/        # Configuration des routes
-  │    ├── theme/         # Thème de l'application
-  │    └── utils/         # Utilitaires communs
-  │
-  ├── features/           # Fonctionnalités organisées par domaine métier
-  │    ├── dashboard/     # Fonctionnalité tableau de bord
-  │    │    ├── data/           # Couche données
-  │    │    │    └── repositories/  # Implémentations des repositories
-  │    │    ├── domain/         # Couche domaine (logique métier)
-  │    │    │    └── bloc/      # État et logique de la fonctionnalité
-  │    │    └── presentation/   # Couche présentation
-  │    │         ├── screens/   # Écrans complets
-  │    │         └── widgets/   # Composants UI réutilisables
-  │    │
-  │    ├── apiary/        # Fonctionnalité rucher
-  │    ├── hive/          # Fonctionnalité ruche
-  │    ├── auth/          # Fonctionnalité authentification
-  │    └── settings/      # Fonctionnalité paramètres
-  │
-  ├── models/             # Modèles de données partagés
-  ├── services/           # Services d'accès aux données
-  ├── widgets/            # Widgets UI partagés
-  ├── screens/            # Écrans (ancienne structure, à migrer progressivement)
-  └── main.dart           # Point d'entrée de l'application
+├── main.dart                      # Point d'entrée de l'application
+├── firebase_options.dart          # Configuration Firebase
+├── core/                          # 🔧 Composants partagés
+│   ├── core.dart                  # Index des exports
+│   ├── config/                    # Configuration centralisée
+│   │   └── app_config.dart        # Constantes globales
+│   ├── error/                     # Gestion d'erreur centralisée
+│   │   └── app_error.dart         # Classes d'erreur personnalisées
+│   ├── extensions/                # Extensions Dart utiles
+│   │   ├── datetime_extensions.dart
+│   │   └── double_extensions.dart
+│   ├── factories/                 # Factory Pattern
+│   │   └── service_factory.dart   # Création et injection des services
+│   ├── models/                    # Modèles de données partagés
+│   │   └── current_state.dart     # Modèle état capteur
+│   ├── repositories/              # Couche d'accès aux données
+│   │   ├── sensor_repository.dart      # Interface repository
+│   │   └── sensor_repository_impl.dart # Implémentation repository
+│   ├── services/                  # Services métier
+│   │   └── hive_service_coordinator.dart # Coordination services
+│   ├── usecases/                  # Logique métier
+│   │   └── dashboard_usecases.dart # Use cases dashboard
+│   └── widgets/                   # Widgets réutilisables
+│       └── state/                 # Widgets d'état
+│           ├── state_display_card.dart    # Affichage état ruche
+│           └── state_stream_widget.dart   # Gestion stream état
+├── features/                      # 📱 Features par domaine métier
+│   ├── features.dart              # Index des exports
+│   ├── dashboard/                 # Feature tableau de bord
+│   │   └── presentation/
+│   │       ├── bloc/
+│   │       │   └── dashboard_bloc.dart    # BLoC dashboard
+│   │       └── pages/
+│   │           └── dashboard_screen.dart  # Écran dashboard
+│   ├── hive/                      # Feature gestion ruches
+│   │   └── presentation/
+│   │       └── pages/
+│   │           ├── hives_screen.dart      # Liste ruches
+│   │           └── hive_details_screen.dart # Détails ruche
+│   ├── apiary/                    # Feature gestion ruchers
+│   │   └── presentation/
+│   │       └── pages/
+│   │           └── apiaries_screen.dart   # Écran ruchers
+│   ├── alert/                     # Feature alertes
+│   │   └── presentation/
+│   │       └── pages/
+│   │           └── alerts_screen.dart     # Écran alertes
+│   ├── sensor/                    # Feature capteurs
+│   │   └── presentation/
+│   │       └── pages/
+│   │           └── sensor_readings_screen.dart # Lectures capteurs
+│   ├── settings/                  # Feature paramètres
+│   │   └── presentation/
+│   │       └── pages/
+│   │           └── settings_screen.dart   # Écran paramètres
+│   └── auth/                      # Feature authentification
+├── screens/                       # 📱 Écrans globaux
+│   └── home_screen.dart           # Écran d'accueil principal
+└── l10n/                          # 🌍 Internationalisation
 ```
 
-## Responsabilités des couches
+## 🔧 **Composants Core**
 
-### 1. Couche données (data)
+### **ServiceFactory**
 
-Responsable de l'accès aux données, que ce soit via API, base de données locale ou Firebase:
+- **Rôle** : Factory centralisant la création et injection des services
+- **Pattern** : Singleton + Factory
+- **Responsabilité** : Initialiser tous les services au démarrage
 
-- **Repositories**: Implémentent les interfaces définies dans la couche domaine
-- **Sources de données**: Gèrent l'accès aux différentes sources (API, local, etc.)
-- **Mappers**: Convertissent entre différents formats de données
+### **HiveServiceCoordinator**
 
-### 2. Couche domaine (domain)
+- **Rôle** : Coordonnateur remplaçant l'ancien SensorService monolithique
+- **Pattern** : Coordinator
+- **Responsabilité** : Orchestrer les services Firebase, capteurs, alertes
 
-Contient la logique métier indépendante de l'interface utilisateur:
+### **SensorRepository**
 
-- **Entités**: Objets métier avec leurs règles et comportements
-- **Repositories (interfaces)**: Définissent les contrats pour l'accès aux données
-- **Blocs**: Gèrent l'état et la logique métier des fonctionnalités
+- **Rôle** : Abstraction de l'accès aux données des capteurs
+- **Pattern** : Repository
+- **Responsabilité** : Interface standardisée pour les données
 
-### 3. Couche présentation (presentation)
+### **DashboardUseCases**
 
-Responsable de l'affichage et des interactions utilisateur:
+- **Rôle** : Logique métier du tableau de bord
+- **Pattern** : Use Cases
+- **Responsabilité** : Orchestrer la récupération et traitement des données
 
-- **Écrans**: Composants UI complets représentant un écran de l'application
-- **Widgets**: Composants UI réutilisables
-- **ViewModels/Blocs**: Préparent les données pour l'affichage
+## 📱 **Architecture UI**
 
-## Gestion d'état
+### **BLoC Pattern**
 
-L'application utilise deux approches complémentaires pour la gestion d'état:
+- Gestion d'état prévisible et testable
+- Séparation claire entre logique métier et UI
+- Réactivité avec des streams
 
-1. **BLoC (Business Logic Component)**: Pour la logique métier complexe, les états multiples et les écrans à forte interaction utilisateur.
-2. **Provider/ChangeNotifier**: Pour des états plus simples et lorsqu'une approche réactive est suffisante.
+### **Widget Composition**
 
-## Dépendances entre couches
+- Widgets modulaires et réutilisables
+- Séparation des responsabilités UI
+- Configuration centralisée des styles
 
-Le principe fondamental est que les dépendances ne vont que dans une direction:
+## 🚀 **Avantages de cette architecture**
 
-- La couche présentation dépend de la couche domaine
-- La couche domaine ne dépend d'aucune autre couche
-- La couche données dépend de la couche domaine (pour les interfaces de repository)
+1. **Maintenabilité** ⚡
 
-Cela garantit que notre logique métier reste propre et indépendante des détails d'implémentation.
+   - Code organisé et facile à comprendre
+   - Responsabilités claires et séparées
+   - Facilité d'ajout de nouvelles features
 
-## Approche de refactoring
+2. **Testabilité** 🧪
 
-La transition vers cette architecture se fait progressivement:
+   - Chaque couche peut être testée isolément
+   - Mocking facilité par les interfaces
+   - Tests unitaires, widgets et intégration
 
-1. Création de nouvelles fonctionnalités avec la nouvelle architecture
-2. Refactoring progressif des fonctionnalités existantes
-3. Respect des principes SOLID lors des modifications
+3. **Évolutivité** 📈
 
-## Convention de nommage
+   - Ajout de nouvelles features sans impact
+   - Modification des services sans casser l'UI
+   - Réutilisation maximale des composants
 
-- **Classes BLoC**: Suffixe `Bloc` (ex: `DashboardBloc`)
-- **États BLoC**: Suffixe `State` (ex: `DashboardState`)
-- **Événements BLoC**: Suffixe `Event` (ex: `DashboardEvent`)
-- **Repositories**: Suffixe `Repository` (ex: `DashboardRepository`)
-- **Classes d'interfaces**: Préfixe `I` (ex: `IApiaryRepository`)
+4. **Performance** ⚡
+   - Injection de dépendances optimisée
+   - Gestion de mémoire améliorée
+   - Rebuild minimal des widgets
 
-## Tests
+## 📦 **Utilisation des exports**
 
-Chaque couche doit être testable indépendamment:
+```dart
+// Import simple des composants core
+import 'package:your_app/core/core.dart';
 
-- **Tests unitaires**: Pour la logique métier et les modèles
-- **Tests de widget**: Pour les composants UI
-- **Tests d'intégration**: Pour les flux complets à travers plusieurs couches
- 
+// Import simple des features
+import 'package:your_app/features/features.dart';
+
+// Utilisation directe
+final coordinator = ServiceFactory.hiveServiceCoordinator;
+final repository = ServiceFactory.sensorRepository;
+```
+
+## 🛡️ **Gestion d'erreur**
+
+- Centralisation dans `AppError`
+- Messages utilisateur localisés
+- Logging des erreurs techniques
+- Récupération gracieuse des erreurs
+
+---
+
+**Cette architecture garantit un code propre, maintenable et évolutif selon les meilleures pratiques Flutter et Clean Architecture.**

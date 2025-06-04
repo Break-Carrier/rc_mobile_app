@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/current_state.dart';
+import '../../models/current_state.dart';
 
 class ThresholdDisplay extends StatelessWidget {
   final CurrentState state;

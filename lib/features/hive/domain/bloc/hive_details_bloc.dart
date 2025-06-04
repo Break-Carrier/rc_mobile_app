@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../models/current_state.dart';
-import '../../../../models/hive.dart';
+import '../../../../core/models/current_state.dart';
+import '../../../../core/models/hive.dart';
 import '../../data/repositories/hive_repository.dart';
 import '../repositories/hive_repository_interface.dart';
 
@@ -146,4 +146,3 @@ class HiveDetailsBloc extends Bloc<HiveDetailsEvent, HiveDetailsState> {
     return super.close();
   }
 }
- 

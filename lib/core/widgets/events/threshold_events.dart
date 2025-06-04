@@ -1,29 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../models/threshold_event.dart';
-import '../../../services/sensor_service.dart';
+import '../../models/threshold_event.dart';
+import '../../factories/service_factory.dart';
 import 'event_states.dart';
 import 'event_item.dart';
 import 'event_pagination.dart';
 
 class ThresholdEvents extends StatefulWidget {
-  const ThresholdEvents({super.key});
+  final int eventsPerPage;
+
+  const ThresholdEvents({
+    super.key,
+    this.eventsPerPage = 5,
+  });
 
   @override
   State<ThresholdEvents> createState() => _ThresholdEventsState();
 }
 
 class _ThresholdEventsState extends State<ThresholdEvents> {
-  static const int _eventsPerPage = 5;
   int _currentPage = 0;
+  late final coordinator = ServiceFactory.getHiveServiceCoordinator();
 
   @override
   Widget build(BuildContext context) {
-    final sensorService = Provider.of<SensorService>(context);
-
     // Si aucune ruche n'est sélectionnée, on n'affiche pas le widget
-    if (sensorService.currentHiveId == null) {
-      return const SizedBox();
+    if (coordinator.currentHiveId == null) {
+      return const SizedBox.shrink();
     }
 
     return Card(
@@ -33,24 +35,35 @@ class _ThresholdEventsState extends State<ThresholdEvents> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Événements de dépassement',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Événements de dépassement de seuil',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => setState(() {}),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
-            _buildEventsList(sensorService),
+            _buildEventsList(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildEventsList(SensorService sensorService) {
+  Widget _buildEventsList() {
     return StreamBuilder<List<ThresholdEvent>>(
-      stream: sensorService.getThresholdEvents(),
+      stream: coordinator.getThresholdEventsStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting &&
             !snapshot.hasData) {
@@ -62,7 +75,6 @@ class _ThresholdEventsState extends State<ThresholdEvents> {
         }
 
         final events = snapshot.data ?? [];
-
         if (events.isEmpty) {
           return const EventEmptyState();
         }
@@ -74,18 +86,20 @@ class _ThresholdEventsState extends State<ThresholdEvents> {
 
   Widget _buildPaginatedEvents(List<ThresholdEvent> events) {
     // Calculer le nombre total de pages
-    final int totalPages = (events.length / _eventsPerPage).ceil();
+    final int totalPages = (events.length / widget.eventsPerPage).ceil();
 
     // S'assurer que la page actuelle est valide
     if (_currentPage >= totalPages) {
       _currentPage = totalPages - 1;
     }
+    if (_currentPage < 0) {
+      _currentPage = 0;
+    }
 
-    // Calculer les indices de début et fin pour la page actuelle
-    final int startIndex = _currentPage * _eventsPerPage;
-    final int endIndex = (startIndex + _eventsPerPage < events.length)
-        ? startIndex + _eventsPerPage
-        : events.length;
+    // Calculer les indices de début et de fin pour la page actuelle
+    final int startIndex = _currentPage * widget.eventsPerPage;
+    final int endIndex =
+        (startIndex + widget.eventsPerPage).clamp(0, events.length);
 
     // Obtenir les événements pour la page actuelle
     final List<ThresholdEvent> pageEvents =
@@ -93,16 +107,21 @@ class _ThresholdEventsState extends State<ThresholdEvents> {
 
     return Column(
       children: [
-        // Liste des événements
+        // Liste des événements de la page actuelle
         ...pageEvents.map((event) => EventItem(event: event)),
 
-        // Pagination
-        EventPagination(
-          currentPage: _currentPage,
-          totalPages: totalPages,
-          onPrevious: () => setState(() => _currentPage--),
-          onNext: () => setState(() => _currentPage++),
-        ),
+        // Pagination si nécessaire
+        if (totalPages > 1)
+          EventPagination(
+            currentPage: _currentPage,
+            totalPages: totalPages,
+            onPrevious: () {
+              if (_currentPage > 0) setState(() => _currentPage--);
+            },
+            onNext: () {
+              if (_currentPage < totalPages - 1) setState(() => _currentPage++);
+            },
+          ),
       ],
     );
   }

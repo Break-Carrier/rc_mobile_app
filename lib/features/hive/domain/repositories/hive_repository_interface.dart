@@ -1,8 +1,8 @@
-import '../../../../models/hive.dart';
-import '../../../../models/current_state.dart';
-import '../../../../models/sensor_reading.dart';
-import '../../../../models/threshold_event.dart';
-import '../../../../models/time_filter.dart';
+import '../../../../core/models/hive.dart';
+import '../../../../core/models/current_state.dart';
+import '../../../../core/models/sensor_reading.dart';
+import '../../../../core/models/threshold_event.dart';
+import '../../../../core/models/time_filter.dart';
 
 /// Interface définissant les méthodes d'accès aux données des ruches
 abstract class IHiveRepository {

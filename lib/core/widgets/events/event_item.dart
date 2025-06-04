@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../models/threshold_event.dart';
+import '../../models/threshold_event.dart';
 
 class EventItem extends StatelessWidget {
   final ThresholdEvent event;

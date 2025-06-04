@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../services/sensor_service.dart';
+import '../../services/hive_service_coordinator.dart';
 
 class ThresholdEditor extends StatefulWidget {
   final double currentTemperature;
   final double hysteresisMargin;
   final VoidCallback onCancel;
   final VoidCallback onSave;
-  final SensorService sensorService;
+  final HiveServiceCoordinator coordinator;
 
   const ThresholdEditor({
     super.key,
@@ -14,7 +14,7 @@ class ThresholdEditor extends StatefulWidget {
     required this.hysteresisMargin,
     required this.onCancel,
     required this.onSave,
-    required this.sensorService,
+    required this.coordinator,
   });
 
   @override
@@ -123,7 +123,7 @@ class _ThresholdEditorState extends State<ThresholdEditor> {
 
     try {
       // Mettre à jour les seuils de température
-      await widget.sensorService.updateThresholds(
+      await widget.coordinator.updateThresholds(
         _targetTemperature - (widget.hysteresisMargin * 2), // Seuil bas
         _targetTemperature, // Seuil principal
       );

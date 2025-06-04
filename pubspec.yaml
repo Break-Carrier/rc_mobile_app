@@ -19,8 +19,8 @@ dependencies:
   cloud_firestore: ^4.14.0
 
   # State Management
-  flutter_bloc: ^9.1.0
-  equatable: ^2.0.5
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.7
 
   # Navigation
   go_router: ^13.2.0
@@ -42,6 +42,7 @@ dependencies:
 
   # New dependency
   provider: ^6.1.1
+  get_it: ^8.0.3
 
 dev_dependencies:
   flutter_test:

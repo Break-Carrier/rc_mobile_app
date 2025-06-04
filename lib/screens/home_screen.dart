@@ -1,13 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'dart:async';
-import '../widgets/current_state_widget.dart';
+import 'package:flutter/material.dart';
 import '../core/widgets/chart/sensor_chart.dart';
 import '../core/widgets/events/threshold_events.dart';
+import '../core/widgets/state/state_stream_widget.dart';
 import '../core/widgets/threshold/threshold_config.dart';
-import '../services/sensor_service.dart';
-import '../models/hive.dart';
-import '../models/apiary.dart';
+import '../core/factories/service_factory.dart';
+import '../core/models/hive.dart';
+import '../core/models/apiary.dart';
 import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -25,6 +24,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Hive> _hives = [];
   bool _isLoading = true;
 
+  late final coordinator = ServiceFactory.getHiveServiceCoordinator();
+
   @override
   void initState() {
     super.initState();
@@ -40,16 +41,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadInitialData() async {
-    final sensorService = Provider.of<SensorService>(context, listen: false);
-
-    if (sensorService.isInitialized) {
-      try {
+    try {
+      if (coordinator.isInitialized) {
         // Récupérer les ruchers
-        _apiaries = await sensorService.getApiaries();
+        _apiaries = await coordinator.getApiaries();
 
         if (_apiaries.isNotEmpty) {
           // Récupérer les ruches du premier rucher
-          _hives = await sensorService.getHivesForApiary(_apiaries.first.id);
+          _hives = await coordinator.getHivesForApiary(_apiaries.first.id);
 
           if (_hives.isNotEmpty) {
             // Sélectionner la première ruche
@@ -67,12 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
             _isLoading = false;
           });
         }
-      } catch (e) {
-        debugPrint('❌ Error loading initial data: $e');
-        setState(() {
-          _isLoading = false;
-        });
       }
+    } catch (e) {
+      debugPrint('❌ Error loading initial data: $e');
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -84,10 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sensorService = Provider.of<SensorService>(context);
-
     // Si le timeout a expiré et services toujours pas initialisés
-    if (_timeoutExpired && !sensorService.isInitialized) {
+    if (_timeoutExpired && !coordinator.isInitialized) {
       return _buildErrorScreen();
     }
 
@@ -103,16 +100,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: !sensorService.isInitialized || _isLoading
+      body: !coordinator.isInitialized || _isLoading
           ? _buildLoadingScreen()
           : _selectedHiveId == null
               ? _buildNoHivesScreen()
               : RefreshIndicator(
                   onRefresh: () async {
                     // Rafraîchir toutes les données lors d'un swipe vers le bas
-                    await Provider.of<SensorService>(context, listen: false)
-                        .refreshAllData();
-                    await _loadInitialData();
+                    try {
+                      await coordinator.refreshAllData();
+                      await _loadInitialData();
+                    } catch (e) {
+                      debugPrint('❌ Error refreshing data: $e');
+                    }
                   },
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -122,11 +122,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Sélecteur de ruche
                         if (_hives.length > 1) _buildHiveSelector(),
 
-                        CurrentStateWidget(
+                        // État actuel avec le nouveau widget optimisé
+                        StateStreamWidget(
                           hiveId: _selectedHiveId!,
-                          sensorService: Provider.of<SensorService>(context),
+                          onRefresh: () async {
+                            await coordinator.refreshAllData();
+                            await _loadInitialData();
+                          },
                         ),
-                        ThresholdConfig(),
+
+                        const ThresholdConfig(),
 
                         // Graphique de température moyenne pour tout le rucher
                         _apiaries.isNotEmpty
@@ -134,9 +139,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 apiaryId: _apiaries.first.id,
                                 showAverageTemperature: true,
                               )
-                            : SensorChart(),
+                            : const SensorChart(),
 
-                        ThresholdEvents(),
+                        const ThresholdEvents(),
                       ],
                     ),
                   ),
@@ -211,74 +216,51 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           CircularProgressIndicator(),
           SizedBox(height: 16),
-          Text(
-            'Initialisation des services...',
-            style: TextStyle(fontSize: 16),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Connexion à Firebase...',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
-          ),
+          Text('Initialisation en cours...'),
         ],
       ),
     );
   }
 
   Widget _buildErrorScreen() {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Monitoring IoT - Erreur'),
-        backgroundColor: Colors.red,
-        foregroundColor: Colors.white,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 64),
-              const SizedBox(height: 16),
-              const Text(
-                'Erreur de connexion',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Impossible de se connecter à Firebase après plusieurs tentatives. Vérifiez votre connexion internet et vos identifiants Firebase.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _timeoutExpired = false;
-                    _isLoading = true;
-                  });
-                  _timeoutTimer?.cancel();
-                  _timeoutTimer = Timer(const Duration(seconds: 10), () {
-                    setState(() {
-                      _timeoutExpired = true;
-                    });
-                  });
-                  // Force rebuild to retry connection
-                  Provider.of<SensorService>(context, listen: false)
-                      .refreshAllData();
-                  _loadInitialData();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-                child: const Text('Réessayer'),
-              ),
-            ],
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red,
           ),
-        ),
+          const SizedBox(height: 16),
+          const Text(
+            'Erreur d\'initialisation',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Les services n\'ont pas pu être initialisés',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              // Relancer l'initialisation
+              setState(() {
+                _timeoutExpired = false;
+                _isLoading = true;
+              });
+              _timeoutTimer = Timer(const Duration(seconds: 10), () {
+                setState(() {
+                  _timeoutExpired = true;
+                });
+              });
+              _loadInitialData();
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Réessayer'),
+          ),
+        ],
       ),
     );
   }

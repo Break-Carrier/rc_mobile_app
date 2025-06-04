@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 /// Représente une lecture de capteur
 class SensorReading extends Equatable {
@@ -85,7 +86,7 @@ class SensorReading extends Equatable {
         metadata: data['metadata'] as Map<String, dynamic>?,
       );
     } catch (e) {
-      print('! Error parsing sensor reading: $e - Data: $data');
+      debugPrint('❌ Error parsing sensor reading: $e - Data: $data');
       // Retourner une lecture factice plutôt que de lancer une exception
       return SensorReading(
         id: id,
@@ -143,7 +144,7 @@ class SensorReading extends Equatable {
         metadata: data['metadata'] as Map<String, dynamic>?,
       );
     } catch (e) {
-      print('! Error parsing Firestore sensor reading: $e');
+      debugPrint('❌ Error parsing Firestore sensor reading: $e');
       // Retourner une lecture factice plutôt que de lancer une exception
       return SensorReading(
         id: id,

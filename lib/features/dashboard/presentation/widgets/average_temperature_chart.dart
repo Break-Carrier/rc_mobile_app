@@ -263,7 +263,7 @@ class AverageTemperatureChart extends StatelessWidget {
             dotData: FlDotData(show: tempReadings.length < 10),
             belowBarData: BarAreaData(
               show: true,
-              color: Colors.red.withOpacity(0.15),
+              color: Colors.red.withValues(alpha: 0.15),
             ),
           ),
         ],

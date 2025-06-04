@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/sensor_reading.dart';
 
 /// Modèle de données pour les lectures de capteurs
@@ -77,7 +78,7 @@ class SensorReadingModel extends SensorReading {
         metadata: data['metadata'] as Map<String, dynamic>?,
       );
     } catch (e) {
-      print('! Error parsing sensor reading: $e - Data: $data');
+      debugPrint('❌ Error parsing sensor reading: $e - Data: $data');
       // Retourner une lecture factice plutôt que de lancer une exception
       return SensorReadingModel(
         id: id,
@@ -109,7 +110,7 @@ class SensorReadingModel extends SensorReading {
         metadata: data['metadata'] as Map<String, dynamic>?,
       );
     } catch (e) {
-      print('! Error parsing Firestore sensor reading: $e');
+      debugPrint('❌ Error parsing Firestore sensor reading: $e');
       // Retourner une lecture factice plutôt que de lancer une exception
       return SensorReadingModel(
         id: id,

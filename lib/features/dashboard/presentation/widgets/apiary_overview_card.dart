@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/models/apiary.dart';
-import '../../../../core/factories/service_factory.dart';
 
 class ApiaryOverviewCard extends StatelessWidget {
   final Apiary apiary;
@@ -246,7 +245,6 @@ class ApiaryOverviewCard extends StatelessWidget {
 
   Future<double?> _getAverageTemperature() async {
     try {
-      final coordinator = ServiceFactory.getHiveServiceCoordinator();
       // TODO: Implémenter le calcul de température moyenne pour le rucher
       return null;
     } catch (e) {

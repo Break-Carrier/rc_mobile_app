@@ -44,7 +44,9 @@ class ApiaryCard extends StatelessWidget {
     return Container(
       height: 80,
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
+        color: Colors.green.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.green),
         image: imageUrl != null
             ? DecorationImage(
                 image: NetworkImage(imageUrl),

@@ -5,7 +5,6 @@ import '../../domain/bloc/dashboard_bloc.dart';
 import '../widgets/global_stats_card.dart';
 import '../widgets/apiary_overview_card.dart';
 import '../widgets/critical_alerts_section.dart';
-import '../../../../core/factories/service_factory.dart';
 import '../../../../core/models/apiary.dart';
 
 class DashboardScreen extends StatelessWidget {

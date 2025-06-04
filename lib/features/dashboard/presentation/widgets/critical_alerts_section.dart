@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/factories/service_factory.dart';
 
 class CriticalAlertsSection extends StatelessWidget {
   const CriticalAlertsSection({super.key});

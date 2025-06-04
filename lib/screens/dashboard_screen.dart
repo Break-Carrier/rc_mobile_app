@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
 import '../features/dashboard/presentation/bloc/dashboard_bloc.dart';
-import '../services/sensor_service.dart';
-import '../widgets/current_state_widget.dart';
+import '../core/factories/service_factory.dart';
+import '../core/widgets/state/state_stream_widget.dart';
 import '../core/widgets/chart/sensor_chart.dart';
 import '../core/widgets/events/threshold_events.dart';
 import '../core/widgets/threshold/threshold_config.dart';
@@ -15,7 +14,7 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => DashboardBloc(
-        sensorService: Provider.of<SensorService>(context, listen: false),
+        sensorService: ServiceFactory.getHiveServiceCoordinator(),
       )..add(LoadDashboard()),
       child: const DashboardView(),
     );
@@ -140,11 +139,12 @@ class _LoadedContent extends StatelessWidget {
                 },
               ),
 
-            // État actuel
+            // État actuel avec le nouveau widget optimisé
             if (state.selectedHiveId != null)
-              CurrentStateWidget(
+              StateStreamWidget(
                 hiveId: state.selectedHiveId!,
-                sensorService: Provider.of<SensorService>(context),
+                onRefresh: () =>
+                    context.read<DashboardBloc>().add(RefreshDashboard()),
               ),
 
             // Configuration des seuils

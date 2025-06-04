@@ -4,7 +4,8 @@ import 'package:equatable/equatable.dart';
 import '../../../../models/hive.dart';
 import '../../../../models/apiary.dart';
 import '../../../../models/current_state.dart';
-import '../../../../services/sensor_service.dart';
+import '../../../../core/services/hive_service_coordinator.dart';
+import '../../../../core/factories/service_factory.dart';
 
 // États
 abstract class DashboardState extends Equatable {
@@ -90,11 +91,11 @@ class UpdateCurrentState extends DashboardEvent {
 
 // BLoC
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
-  final SensorService _sensorService;
+  final HiveServiceCoordinator _coordinator;
   StreamSubscription? _currentStateSubscription;
 
-  DashboardBloc({required SensorService sensorService})
-      : _sensorService = sensorService,
+  DashboardBloc({required HiveServiceCoordinator sensorService})
+      : _coordinator = sensorService,
         super(DashboardInitial()) {
     on<LoadDashboard>(_onLoadDashboard);
     on<SelectHive>(_onSelectHive);
@@ -109,33 +110,33 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     emit(DashboardLoading());
 
     try {
-      // Attendre que les services soient initialisés
-      if (!_sensorService.isInitialized) {
+      // Attendre que le coordinateur soit initialisé
+      if (!_coordinator.isInitialized) {
         // Timeout pour éviter l'attente infinie
         final timeout = Future.delayed(const Duration(seconds: 10));
         final initialized = Future.doWhile(() async {
           await Future.delayed(const Duration(milliseconds: 100));
-          return !_sensorService.isInitialized;
+          return !_coordinator.isInitialized;
         });
 
         await Future.any([timeout, initialized]);
       }
 
-      if (!_sensorService.isInitialized) {
+      if (!_coordinator.isInitialized) {
         emit(const DashboardError('Services non initialisés'));
         return;
       }
 
-      // Charger les données
-      final apiaries = await _sensorService.getApiaries();
+      // Utiliser le coordinateur pour obtenir les données
+      final apiaries = await _coordinator.getApiaries();
       List<Hive> hives = [];
       String? selectedHiveId;
 
       if (apiaries.isNotEmpty) {
-        hives = await _sensorService.getHivesForApiary(apiaries.first.id);
+        hives = await _coordinator.getHivesForApiary(apiaries.first.id);
         if (hives.isNotEmpty) {
           selectedHiveId = hives.first.id;
-          _sensorService.setCurrentHive(selectedHiveId);
+          await _coordinator.setActiveHive(selectedHiveId);
         }
       }
 
@@ -161,7 +162,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     if (state is DashboardLoaded) {
       final currentState = state as DashboardLoaded;
 
-      _sensorService.setCurrentHive(event.hiveId);
+      await _coordinator.setActiveHive(event.hiveId);
 
       emit(currentState.copyWith(selectedHiveId: event.hiveId));
 
@@ -173,7 +174,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     RefreshDashboard event,
     Emitter<DashboardState> emit,
   ) async {
-    await _sensorService.refreshAllData();
+    await _coordinator.refreshAllData();
     add(LoadDashboard());
   }
 
@@ -189,7 +190,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
   void _listenToCurrentState() {
     _currentStateSubscription?.cancel();
-    _currentStateSubscription = _sensorService.getCurrentState().listen(
+    _currentStateSubscription = _coordinator.getCurrentStateStream().listen(
       (currentState) {
         add(UpdateCurrentState(currentState));
       },

@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
-import '../core/widgets/state/state_stream_widget.dart';
+import 'package:flutter/material.dart';
 import '../core/widgets/chart/sensor_chart.dart';
 import '../core/widgets/events/threshold_events.dart';
+import '../core/widgets/state/state_stream_widget.dart';
 import '../core/widgets/threshold/threshold_config.dart';
 import '../core/factories/service_factory.dart';
-import '../models/hive.dart';
-import '../models/apiary.dart';
+import '../core/models/hive.dart';
+import '../core/models/apiary.dart';
 import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {

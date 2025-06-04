@@ -1,8 +1,36 @@
 import '../services/hive_service_coordinator.dart';
-import '../../services/firebase_service.dart';
-import '../../services/current_state_service.dart';
-import '../../services/sensor_reading_service.dart';
-import '../../services/threshold_event_service.dart';
+import '../models/current_state.dart';
+import '../models/sensor_reading.dart';
+import '../models/threshold_event.dart';
+import '../models/time_filter.dart';
+
+// Mock services temporaires - à remplacer par de vrais services
+class FirebaseService {
+  Future<void> initialize() async {}
+  bool get isConnected => true;
+  Future<bool> checkDirectConnection() async => true;
+  Future<void> updateData(String path, Map<String, dynamic> data) async {}
+}
+
+class CurrentStateService {
+  CurrentStateService(FirebaseService firebaseService);
+  void setCurrentHive(String hiveId) {}
+  Future<CurrentState?> getCurrentState() async => null;
+  Stream<CurrentState?> get stateStream => Stream.value(null);
+}
+
+class SensorReadingService {
+  SensorReadingService(FirebaseService firebaseService);
+  void setCurrentHive(String hiveId) {}
+  Future<void> setTimeFilter(TimeFilter filter) async {}
+  Stream<List<SensorReading>> get readingsStream => Stream.value([]);
+}
+
+class ThresholdEventService {
+  ThresholdEventService(FirebaseService firebaseService);
+  void setCurrentHive(String hiveId) {}
+  Stream<List<ThresholdEvent>> get eventsStream => Stream.value([]);
+}
 
 /// Factory pour créer les services avec les bonnes dépendances
 class ServiceFactory {

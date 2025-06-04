@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/time_filter.dart';
+import '../../models/time_filter.dart';
 
 class ChartHeader extends StatelessWidget {
   final String title;

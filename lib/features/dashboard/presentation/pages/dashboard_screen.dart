@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../features/dashboard/presentation/bloc/dashboard_bloc.dart';
-import '../core/factories/service_factory.dart';
-import '../core/widgets/state/state_stream_widget.dart';
-import '../core/widgets/chart/sensor_chart.dart';
-import '../core/widgets/events/threshold_events.dart';
-import '../core/widgets/threshold/threshold_config.dart';
+import '../bloc/dashboard_bloc.dart';
+import '../../../../core/factories/service_factory.dart';
+import '../../../../core/widgets/state/state_stream_widget.dart';
+import '../../../../core/widgets/chart/sensor_chart.dart';
+import '../../../../core/widgets/events/threshold_events.dart';
+import '../../../../core/widgets/threshold/threshold_config.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});

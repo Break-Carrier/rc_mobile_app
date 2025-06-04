@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/current_state.dart';
+import '../../models/current_state.dart';
 import '../../extensions/datetime_extensions.dart';
 import '../../extensions/double_extensions.dart';
 import '../../config/app_config.dart';

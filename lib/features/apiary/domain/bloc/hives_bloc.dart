@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../models/apiary.dart';
-import '../../../../models/hive.dart';
+import '../../../../core/models/apiary.dart';
+import '../../../../core/models/hive.dart';
 import '../../data/repositories/apiary_repository.dart';
 import '../repositories/apiary_repository_interface.dart';
 
@@ -76,7 +76,6 @@ class HivesError extends HivesState {
 // BLoC
 class HivesBloc extends Bloc<HivesEvent, HivesState> {
   final IApiaryRepository _apiaryRepository;
-  String? _currentApiaryId;
 
   HivesBloc({
     IApiaryRepository? apiaryRepository,
@@ -91,7 +90,6 @@ class HivesBloc extends Bloc<HivesEvent, HivesState> {
   Future<void> _onLoadHives(LoadHives event, Emitter<HivesState> emit) async {
     try {
       emit(HivesLoading());
-      _currentApiaryId = event.apiaryId;
 
       // Charger le rucher
       final apiary = await _apiaryRepository.getApiaryById(event.apiaryId);

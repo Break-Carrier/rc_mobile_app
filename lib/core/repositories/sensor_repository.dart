@@ -1,9 +1,9 @@
-import '../../models/hive.dart';
-import '../../models/apiary.dart';
-import '../../models/current_state.dart';
-import '../../models/sensor_reading.dart';
-import '../../models/threshold_event.dart';
-import '../../models/time_filter.dart';
+import '../models/hive.dart';
+import '../models/apiary.dart';
+import '../models/current_state.dart';
+import '../models/sensor_reading.dart';
+import '../models/threshold_event.dart';
+import '../models/time_filter.dart';
 
 /// Interface abstraite pour l'accès aux données des capteurs
 abstract class ISensorRepository {

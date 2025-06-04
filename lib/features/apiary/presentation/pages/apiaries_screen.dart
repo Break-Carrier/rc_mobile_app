@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/apiary.dart';
-import '../services/sensor_service.dart';
+import '../../../../core/models/apiary.dart';
+import '../../../../core/factories/service_factory.dart';
 import 'package:go_router/go_router.dart';
 
 class ApiariesScreen extends StatelessWidget {
@@ -9,7 +8,7 @@ class ApiariesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sensorService = Provider.of<SensorService>(context);
+    final coordinator = ServiceFactory.getHiveServiceCoordinator();
 
     return Scaffold(
       appBar: AppBar(
@@ -24,7 +23,7 @@ class ApiariesScreen extends StatelessWidget {
         ],
       ),
       body: FutureBuilder<List<Apiary>>(
-        future: sensorService.getApiaries(),
+        future: coordinator.getApiaries(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(

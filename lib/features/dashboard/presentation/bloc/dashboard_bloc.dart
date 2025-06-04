@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../../../models/hive.dart';
-import '../../../../models/apiary.dart';
-import '../../../../models/current_state.dart';
+import '../../../../core/models/hive.dart';
+import '../../../../core/models/apiary.dart';
+import '../../../../core/models/current_state.dart';
 import '../../../../core/services/hive_service_coordinator.dart';
-import '../../../../core/factories/service_factory.dart';
 
 // États
 abstract class DashboardState extends Equatable {

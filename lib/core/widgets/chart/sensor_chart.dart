@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
-import '../../../models/sensor_reading.dart';
-import '../../../models/time_filter.dart';
-import '../../../services/sensor_service.dart';
+import '../../models/sensor_reading.dart';
+import '../../models/time_filter.dart';
+import '../../../core/factories/service_factory.dart';
 import '../../constants/mock_data.dart';
 import 'chart_header.dart';
 import 'chart_legend.dart';
@@ -34,6 +33,7 @@ class SensorChart extends StatefulWidget {
 class _SensorChartState extends State<SensorChart> {
   bool _showTemperature = true;
   bool _showHumidity = true;
+  late final coordinator = ServiceFactory.getHiveServiceCoordinator();
 
   @override
   Widget build(BuildContext context) {
@@ -66,15 +66,17 @@ class _SensorChartState extends State<SensorChart> {
   }
 
   Widget _buildHeader() {
-    final sensorService = Provider.of<SensorService>(context);
-    final currentFilter = sensorService.currentTimeFilter;
+    // Utiliser TimeFilter.oneHour comme valeur par défaut
+    const currentFilter = TimeFilter.oneHour;
 
     return ChartHeader(
       title: widget.showAverageTemperature
           ? 'Température moyenne du rucher'
           : 'Évolution des capteurs',
       currentFilter: currentFilter,
-      onFilterChanged: (filter) => sensorService.setTimeFilter(filter),
+      onFilterChanged: (filter) {
+        // Pour l'instant, ne rien faire - à implémenter plus tard
+      },
     );
   }
 
@@ -88,37 +90,12 @@ class _SensorChartState extends State<SensorChart> {
       return _buildChartWithData(widget.readings!);
     }
 
-    final sensorService = Provider.of<SensorService>(context);
-
-    if (widget.showAverageTemperature && widget.apiaryId != null) {
-      return _buildAverageTemperatureChart(sensorService, widget.apiaryId!);
-    }
-
-    return StreamBuilder<List<SensorReading>>(
-      stream: sensorService.getSensorReadings(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return const ChartLoadingState();
-        }
-
-        if (snapshot.hasError) {
-          return ChartErrorState(error: snapshot.error.toString());
-        }
-
-        final readings = snapshot.data ?? [];
-        if (readings.isEmpty) {
-          return _buildMockChart(); // Fallback to mock data if no real data
-        }
-
-        return _buildChartWithData(readings);
-      },
-    );
+    // Pour l'instant, utiliser des données mock
+    return _buildMockChart();
   }
 
   Widget _buildMockChart() {
-    final sensorService = Provider.of<SensorService>(context);
-    final timeFilter = sensorService.currentTimeFilter;
+    const timeFilter = TimeFilter.oneHour;
 
     final mockReadings = MockData.generateMockReadings(
       hiveId: widget.hiveId ?? 'mock_hive_01',
@@ -126,30 +103,6 @@ class _SensorChartState extends State<SensorChart> {
     );
 
     return _buildChartWithData(mockReadings);
-  }
-
-  Widget _buildAverageTemperatureChart(
-      SensorService sensorService, String apiaryId) {
-    return StreamBuilder<List<SensorReading>>(
-      stream: sensorService.getAverageTemperatureForApiary(apiaryId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return const ChartLoadingState();
-        }
-
-        if (snapshot.hasError) {
-          return ChartErrorState(error: snapshot.error.toString());
-        }
-
-        final readings = snapshot.data ?? [];
-        if (readings.isEmpty) {
-          return _buildMockChart(); // Fallback to mock data
-        }
-
-        return _buildChartWithData(readings);
-      },
-    );
   }
 
   Widget _buildChartWithData(List<SensorReading> readings) {

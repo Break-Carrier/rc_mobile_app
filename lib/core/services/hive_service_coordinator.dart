@@ -1,16 +1,12 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../../models/current_state.dart';
-import '../../models/sensor_reading.dart';
-import '../../models/threshold_event.dart';
-import '../../models/time_filter.dart';
-import '../../models/apiary.dart';
-import '../../models/hive.dart';
-import '../../services/firebase_service.dart';
-import '../../services/current_state_service.dart';
-import '../../services/sensor_reading_service.dart';
-import '../../services/threshold_event_service.dart';
-import '../../services/sensor_service.dart';
+import '../models/current_state.dart';
+import '../models/sensor_reading.dart';
+import '../models/threshold_event.dart';
+import '../models/time_filter.dart';
+import '../models/apiary.dart';
+import '../models/hive.dart';
+import '../factories/service_factory.dart';
 import '../config/app_config.dart';
 import '../error/app_error.dart';
 
@@ -162,11 +158,9 @@ class HiveServiceCoordinator {
       if (state == null) return null;
 
       return {
-        'temperature': state.temperature,
-        'humidity': state.humidity,
-        'last_update': state.timestamp.millisecondsSinceEpoch,
-        'is_over_threshold': state.isOverThreshold,
+        'connection': 'ok',
         'hive_id': _currentHiveId,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
       };
     } catch (e) {
       debugPrint('❌ Error checking connection: $e');
@@ -191,32 +185,44 @@ class HiveServiceCoordinator {
     }
   }
 
-  /// Récupère tous les ruchers (temporaire - utilise l'ancien service)
+  /// Récupère tous les ruchers - données mock pour le moment
   Future<List<Apiary>> getApiaries() async {
-    // TODO: Implémenter avec un repository dédié
-    // Pour l'instant, on utilise une instance temporaire de l'ancien service
-    final tempService = SensorService();
-    if (!tempService.isInitialized) {
-      // Attendre l'initialisation
-      await Future.doWhile(() async {
-        await Future.delayed(const Duration(milliseconds: 100));
-        return !tempService.isInitialized;
-      });
-    }
-    return await tempService.getApiaries();
+    // Pour l'instant, retourner des données mock
+    final now = DateTime.now();
+    return [
+      Apiary(
+        id: 'apiary_1',
+        name: 'Rucher Principal',
+        location: 'Jardin',
+        createdAt: now,
+        updatedAt: now,
+        hiveIds: ['hive_1', 'hive_2'],
+      ),
+    ];
   }
 
-  /// Récupère les ruches d'un rucher (temporaire - utilise l'ancien service)
+  /// Récupère les ruches d'un rucher - données mock pour le moment
   Future<List<Hive>> getHivesForApiary(String apiaryId) async {
-    // TODO: Implémenter avec un repository dédié
-    final tempService = SensorService();
-    if (!tempService.isInitialized) {
-      await Future.doWhile(() async {
-        await Future.delayed(const Duration(milliseconds: 100));
-        return !tempService.isInitialized;
-      });
-    }
-    return await tempService.getHivesForApiary(apiaryId);
+    // Pour l'instant, retourner des données mock
+    final now = DateTime.now();
+    return [
+      Hive(
+        id: 'hive_1',
+        name: 'Ruche Alpha',
+        apiaryId: apiaryId,
+        createdAt: now,
+        updatedAt: now,
+        recentReadings: [],
+      ),
+      Hive(
+        id: 'hive_2',
+        name: 'Ruche Beta',
+        apiaryId: apiaryId,
+        createdAt: now,
+        updatedAt: now,
+        recentReadings: [],
+      ),
+    ];
   }
 
   /// Validation interne

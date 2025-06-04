@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import '../services/sensor_service.dart';
-import '../models/hive.dart';
-import '../models/current_state.dart';
+import '../../../../core/models/hive.dart';
+import '../../../../core/models/current_state.dart';
+import '../../../../core/factories/service_factory.dart';
 
 class HiveDetailsScreen extends StatefulWidget {
   final String hiveId;
@@ -18,24 +17,23 @@ class HiveDetailsScreen extends StatefulWidget {
 }
 
 class _HiveDetailsScreenState extends State<HiveDetailsScreen> {
+  late final coordinator = ServiceFactory.getHiveServiceCoordinator();
+
   @override
   void initState() {
     super.initState();
     // Définir la ruche active au chargement
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final sensorService = Provider.of<SensorService>(context, listen: false);
-      sensorService.setCurrentHive(widget.hiveId);
+      coordinator.setActiveHive(widget.hiveId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final sensorService = Provider.of<SensorService>(context);
-
     return Scaffold(
       appBar: AppBar(
         title: FutureBuilder<Hive?>(
-          future: sensorService.getHiveById(widget.hiveId),
+          future: _getHiveById(widget.hiveId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Text('Chargement...');
@@ -50,7 +48,7 @@ class _HiveDetailsScreenState extends State<HiveDetailsScreen> {
         ),
       ),
       body: StreamBuilder<CurrentState?>(
-        stream: sensorService.getCurrentState(),
+        stream: coordinator.getCurrentStateStream(),
         builder: (context, snapshot) {
           final currentState = snapshot.data;
           final hasData = currentState != null;
@@ -69,7 +67,7 @@ class _HiveDetailsScreenState extends State<HiveDetailsScreen> {
                     ),
                     const SizedBox(height: 16),
                     FutureBuilder<Hive?>(
-                      future: sensorService.getHiveById(widget.hiveId),
+                      future: _getHiveById(widget.hiveId),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -175,6 +173,23 @@ class _HiveDetailsScreenState extends State<HiveDetailsScreen> {
         },
       ),
     );
+  }
+
+  Future<Hive?> _getHiveById(String hiveId) async {
+    try {
+      final apiaries = await coordinator.getApiaries();
+      for (final apiary in apiaries) {
+        final hives = await coordinator.getHivesForApiary(apiary.id);
+        for (final hive in hives) {
+          if (hive.id == hiveId) {
+            return hive;
+          }
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 
   Widget _buildCurrentStateItem(

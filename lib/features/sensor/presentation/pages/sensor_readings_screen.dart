@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../services/sensor_service.dart';
-import '../models/sensor_reading.dart';
-import '../models/time_filter.dart';
-import '../widgets/sensor_readings_chart.dart';
+import '../../../../core/models/sensor_reading.dart';
+import '../../../../core/models/time_filter.dart';
+import '../../../../core/factories/service_factory.dart';
 
 class SensorReadingsScreen extends StatefulWidget {
   final String hiveId;
@@ -19,22 +17,20 @@ class SensorReadingsScreen extends StatefulWidget {
 
 class _SensorReadingsScreenState extends State<SensorReadingsScreen> {
   TimeFilter _selectedFilter = TimeFilter.oneHour;
+  late final coordinator = ServiceFactory.getHiveServiceCoordinator();
 
   @override
   void initState() {
     super.initState();
     // Définir la ruche active au chargement
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final sensorService = Provider.of<SensorService>(context, listen: false);
-      sensorService.setCurrentHive(widget.hiveId);
-      sensorService.setTimeFilter(_selectedFilter);
+      coordinator.setActiveHive(widget.hiveId);
+      coordinator.setTimeFilter(_selectedFilter);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final sensorService = Provider.of<SensorService>(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lectures des capteurs'),
@@ -46,7 +42,7 @@ class _SensorReadingsScreenState extends State<SensorReadingsScreen> {
               setState(() {
                 _selectedFilter = filter;
               });
-              sensorService.setTimeFilter(filter);
+              coordinator.setTimeFilter(filter);
             },
             itemBuilder: (BuildContext context) {
               return TimeFilter.values.map((TimeFilter filter) {
@@ -72,7 +68,7 @@ class _SensorReadingsScreenState extends State<SensorReadingsScreen> {
           // Graphique des lectures
           Expanded(
             child: StreamBuilder<List<SensorReading>>(
-              stream: sensorService.getSensorReadings(),
+              stream: coordinator.getSensorReadingsStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -103,9 +99,40 @@ class _SensorReadingsScreenState extends State<SensorReadingsScreen> {
 
                 return Column(
                   children: [
-                    // Graphique des lectures
+                    // Placeholder pour le graphique
                     Expanded(
-                      child: SensorReadingsChart(readings: readings),
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.analytics,
+                                  size: 64, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text(
+                                'Graphique des lectures',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              Text(
+                                'TODO: Implémenter le graphique',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                     // Informations détaillées
                     Container(

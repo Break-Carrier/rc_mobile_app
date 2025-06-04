@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/hive.dart';
-import '../services/sensor_service.dart';
+import '../../../../core/models/hive.dart';
+import '../../../../core/factories/service_factory.dart';
 import 'package:go_router/go_router.dart';
 
 class HivesScreen extends StatelessWidget {
@@ -14,14 +13,14 @@ class HivesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sensorService = Provider.of<SensorService>(context);
+    final coordinator = ServiceFactory.getHiveServiceCoordinator();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ruches'),
       ),
       body: FutureBuilder<List<Hive>>(
-        future: sensorService.getHivesForApiary(apiaryId),
+        future: coordinator.getHivesForApiary(apiaryId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(

@@ -1,70 +1,103 @@
 import 'package:flutter/material.dart';
+import '../../../../core/models/apiary.dart';
 
 class GlobalStatsCard extends StatelessWidget {
-  final int apiaryCount;
-  final int hiveCount;
-  final int alertCount;
+  final List<Apiary> apiaries;
 
   const GlobalStatsCard({
     super.key,
-    required this.apiaryCount,
-    required this.hiveCount,
-    required this.alertCount,
+    required this.apiaries,
   });
 
   @override
   Widget build(BuildContext context) {
+    final totalHives = _getTotalHiveCount();
+    final alertCount = _getCriticalAlertCount();
+    final avgTemp = _getGlobalAverageTemperature();
+    final avgHumidity = _getGlobalAverageHumidity();
+
     return Card(
       elevation: 4,
-      child: Padding(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [Colors.blue.shade50, Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.dashboard,
-                  color: Theme.of(context).primaryColor,
-                  size: 28,
-                ),
+                const Icon(Icons.dashboard, color: Colors.blue, size: 28),
                 const SizedBox(width: 12),
                 Text(
-                  'Vue d\'ensemble',
+                  'Résumé Global',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
+                        color: Colors.blue.shade800,
                       ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+
+            // Première ligne de statistiques
             Row(
               children: [
                 Expanded(
                   child: _StatItem(
-                    icon: Icons.home_work,
+                    value: '📊 ${apiaries.length}',
                     label: 'Ruchers',
-                    value: apiaryCount.toString(),
                     color: Colors.blue,
                   ),
                 ),
-                const SizedBox(width: 16),
                 Expanded(
                   child: _StatItem(
-                    icon: Icons.hive,
+                    value: '🏠 $totalHives',
                     label: 'Ruches',
-                    value: hiveCount.toString(),
-                    color: Colors.amber,
+                    color: Colors.amber.shade700,
                   ),
                 ),
-                const SizedBox(width: 16),
                 Expanded(
                   child: _StatItem(
-                    icon: Icons.warning,
+                    value: '⚠️ $alertCount',
                     label: 'Alertes',
-                    value: alertCount.toString(),
                     color: alertCount > 0 ? Colors.red : Colors.green,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Deuxième ligne de statistiques
+            Row(
+              children: [
+                Expanded(
+                  child: _StatItem(
+                    value: '🌡️ ${avgTemp.toStringAsFixed(1)}°C',
+                    label: 'Temp. moy.',
+                    color: Colors.red.shade600,
+                  ),
+                ),
+                Expanded(
+                  child: _StatItem(
+                    value: '💧 ${avgHumidity.toStringAsFixed(0)}%',
+                    label: 'Humid. moy.',
+                    color: Colors.blue.shade600,
+                  ),
+                ),
+                Expanded(
+                  child: _StatItem(
+                    value: '✅ ${_getHealthyHivesCount()}',
+                    label: 'OK',
+                    color: Colors.green.shade600,
                   ),
                 ),
               ],
@@ -74,45 +107,58 @@ class GlobalStatsCard extends StatelessWidget {
       ),
     );
   }
+
+  int _getTotalHiveCount() {
+    return apiaries.fold(0, (total, apiary) => total + apiary.hiveIds.length);
+  }
+
+  int _getCriticalAlertCount() {
+    // TODO: Implémenter le compte des alertes critiques
+    return 2; // Simulé pour l'instant
+  }
+
+  double _getGlobalAverageTemperature() {
+    // TODO: Calculer la température moyenne réelle
+    return 24.5; // Simulé pour l'instant
+  }
+
+  double _getGlobalAverageHumidity() {
+    // TODO: Calculer l'humidité moyenne réelle
+    return 65.0; // Simulé pour l'instant
+  }
+
+  int _getHealthyHivesCount() {
+    // TODO: Calculer le nombre de ruches en bonne santé
+    return _getTotalHiveCount() - 2; // Simulé pour l'instant
+  }
 }
 
 class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
   final String value;
+  final String label;
   final Color color;
 
   const _StatItem({
-    required this.icon,
-    required this.label,
     required this.value,
+    required this.label,
     required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 32,
-          ),
-          const SizedBox(height: 8),
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -121,9 +167,9 @@ class _StatItem extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
-              color: color,
-              fontWeight: FontWeight.w500,
+              fontSize: 11,
+              color: color.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
           ),

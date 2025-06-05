@@ -78,6 +78,78 @@ lib/
 └── l10n/                          # 🌍 Internationalisation
 ```
 
+## 🎯 **Architecture Dashboard & Navigation**
+
+### **Hiérarchie de Navigation Métier**
+
+L'application suit une hiérarchie naturelle pour l'apiculteur :
+
+```
+Dashboard Global (Vue d'ensemble)
+├── 📊 Résumé Multi-Ruchers
+│   ├── Statistiques globales (ruchers, ruches, alertes)
+│   ├── État de santé général
+│   └── Alertes prioritaires
+├── 🏡 Ruchers
+│   ├── Rucher Principal
+│   │   ├── Vue grille des ruches
+│   │   ├── Comparaisons température/humidité
+│   │   └── Ruche Alpha (détails)
+│   ├── Rucher Forêt
+│   └── Rucher Prairie
+└── 🔔 Alertes Globales
+```
+
+### **Niveaux de Dashboard**
+
+#### **1. Dashboard Principal (Accueil)**
+
+- **Objectif** : Vue d'ensemble complète pour l'apiculteur
+- **Contenu** :
+  - Résumé statistiques (X ruchers, Y ruches, Z alertes)
+  - Cards des ruchers avec statut visuel (✅⚠️❌)
+  - Alertes les plus critiques
+  - Graphique température moyenne par rucher
+- **Navigation** : Vers ruchers spécifiques
+
+#### **2. Dashboard Rucher**
+
+- **Objectif** : Gestion d'un rucher spécifique
+- **Contenu** :
+  - En-tête rucher (nom, localisation, nombre ruches)
+  - Grille visuelle des ruches avec statuts
+  - Graphiques comparatifs multi-ruches
+  - Actions : ajouter ruche, configurer rucher
+- **Navigation** : Vers ruches individuelles
+
+#### **3. Dashboard Ruche**
+
+- **Objectif** : Monitoring détaillé d'une ruche
+- **Contenu** :
+  - Métriques temps réel (température, humidité)
+  - Historiques détaillés et tendances
+  - Configuration seuils et alertes
+  - Gestion capteurs
+- **Navigation** : Retour rucher ou vers autre ruche
+
+### **Flux de Données Dashboard**
+
+```dart
+DashboardBloc
+├── GlobalDashboardState
+│   ├── List<Apiary> apiaries
+│   ├── GlobalStats stats
+│   └── List<Alert> criticalAlerts
+├── ApiaryDashboardState
+│   ├── Apiary selectedApiary
+│   ├── List<Hive> hives
+│   └── ComparisonData charts
+└── HiveDashboardState
+    ├── Hive selectedHive
+    ├── CurrentState realTimeData
+    └── HistoricalData trends
+```
+
 ## 🔧 **Composants Core**
 
 ### **ServiceFactory**
@@ -118,6 +190,34 @@ lib/
 - Séparation des responsabilités UI
 - Configuration centralisée des styles
 
+### **Navigation Hiérarchique**
+
+- **Contexte métier** : Respecte le workflow naturel de l'apiculteur
+- **Drill-down progressif** : Du général (tous ruchers) au spécifique (ruche)
+- **Breadcrumbs** : Navigation claire avec contexte
+- **Actions contextuelles** : Boutons adaptés au niveau (ajouter rucher/ruche)
+
+## 🎨 **UX Principles**
+
+### **Information Hierarchy**
+
+1. **Global** : Vue d'ensemble pour prise de décision rapide
+2. **Contextuel** : Données pertinentes selon le niveau
+3. **Détaillé** : Informations techniques pour maintenance
+
+### **Visual Design**
+
+- **Status Colors** : ✅ Normal, ⚠️ Attention, ❌ Critique
+- **Progressive Disclosure** : Information par niveaux
+- **Responsive Layout** : Adaptation mobile/tablet
+
+### **User Flow**
+
+```
+Ouverture App → Dashboard Global → Sélection Rucher →
+Gestion Ruches → Détails Ruche → Actions/Configuration
+```
+
 ## 🚀 **Avantages de cette architecture**
 
 1. **Maintenabilité** ⚡
@@ -139,9 +239,15 @@ lib/
    - Réutilisation maximale des composants
 
 4. **Performance** ⚡
+
    - Injection de dépendances optimisée
    - Gestion de mémoire améliorée
    - Rebuild minimal des widgets
+
+5. **UX Métier** 👨‍🌾
+   - Navigation intuitive pour l'apiculteur
+   - Workflow respectant les besoins réels
+   - Information contextuelle et actionnable
 
 ## 📦 **Utilisation des exports**
 
@@ -166,4 +272,4 @@ final repository = ServiceFactory.sensorRepository;
 
 ---
 
-**Cette architecture garantit un code propre, maintenable et évolutif selon les meilleures pratiques Flutter et Clean Architecture.**
+**Cette architecture garantit un code propre, maintenable et évolutif selon les meilleures pratiques Flutter et Clean Architecture, tout en respectant les besoins métier réels de l'apiculteur.**

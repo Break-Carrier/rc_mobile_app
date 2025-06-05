@@ -1,6 +1,6 @@
 /// Utilitaires pour convertir les types de données
 class MapConverter {
-  /// Convertit un Map<Object?, Object?> en Map<String, dynamic>
+  /// Convertit un Map\<Object?, Object?\> en Map\<String, dynamic\>
   static Map<String, dynamic> convertToStringDynamicMap(
       Map<Object?, Object?> map) {
     final result = <String, dynamic>{};

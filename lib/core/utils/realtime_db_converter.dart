@@ -74,7 +74,7 @@ class RealtimeDBConverter {
     return events;
   }
 
-  /// Parse une chaîne JSON en Map<String, dynamic>
+  /// Parse une chaîne JSON en Map\<String, dynamic\>
   static Map<String, dynamic> parseJsonString(String jsonString) {
     try {
       return json.decode(jsonString) as Map<String, dynamic>;
@@ -83,7 +83,7 @@ class RealtimeDBConverter {
     }
   }
 
-  /// Convertit un Map<String, dynamic> en chaîne JSON
+  /// Convertit un Map\<String, dynamic\> en chaîne JSON
   static String toJsonString(Map<String, dynamic> data) {
     return json.encode(data);
   }

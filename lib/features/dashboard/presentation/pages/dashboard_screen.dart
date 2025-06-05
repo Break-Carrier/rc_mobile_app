@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../bloc/dashboard_bloc.dart';
-import '../../../../core/factories/service_factory.dart';
-import '../../../../core/widgets/state/state_stream_widget.dart';
-import '../../../../core/widgets/chart/sensor_chart.dart';
-import '../../../../core/widgets/events/threshold_events.dart';
-import '../../../../core/widgets/threshold/threshold_config.dart';
+import '../../domain/bloc/dashboard_bloc.dart';
+import '../widgets/dashboard_states.dart';
+import '../widgets/global_stats_card.dart';
+import '../widgets/apiaries_section.dart';
+import '../widgets/recent_alerts_section.dart';
+//import '../widgets/quick_actions_section.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -13,9 +13,7 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => DashboardBloc(
-        sensorService: ServiceFactory.getHiveServiceCoordinator(),
-      )..add(LoadDashboard()),
+      create: (context) => DashboardBloc()..add(LoadDashboardData()),
       child: const DashboardView(),
     );
   }
@@ -28,79 +26,28 @@ class DashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mes Ruches'),
+        title: const Text('🏡 Ruche Connectée'),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.blue),
             onPressed: () =>
-                context.read<DashboardBloc>().add(RefreshDashboard()),
+                context.read<DashboardBloc>().add(RefreshDashboardData()),
           ),
         ],
       ),
       body: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (context, state) {
           return switch (state) {
-            DashboardInitial() => const _LoadingWidget(),
-            DashboardLoading() => const _LoadingWidget(),
-            DashboardError() => _ErrorWidget(message: state.message),
+            DashboardInitial() => const DashboardLoadingWidget(),
+            DashboardLoading() => const DashboardLoadingWidget(),
+            DashboardError() => DashboardErrorWidget(message: state.message),
             DashboardLoaded() => _LoadedContent(state: state),
-            _ => const _LoadingWidget(),
+            _ => const DashboardLoadingWidget(),
           };
         },
-      ),
-    );
-  }
-}
-
-class _LoadingWidget extends StatelessWidget {
-  const _LoadingWidget();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text('Initialisation en cours...'),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorWidget extends StatelessWidget {
-  final String message;
-
-  const _ErrorWidget({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Erreur',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: Colors.red,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(message),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () => context.read<DashboardBloc>().add(LoadDashboard()),
-            child: const Text('Réessayer'),
-          ),
-        ],
       ),
     );
   }
@@ -113,119 +60,39 @@ class _LoadedContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (state.hives.isEmpty) {
-      return const _NoHivesWidget();
+    if (state.apiaries.isEmpty) {
+      return const NoApiariesWidget();
     }
 
     return RefreshIndicator(
       onRefresh: () async {
-        context.read<DashboardBloc>().add(RefreshDashboard());
+        context.read<DashboardBloc>().add(RefreshDashboardData());
         await Future.delayed(const Duration(milliseconds: 500));
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Sélecteur de ruche
-            if (state.hives.length > 1)
-              _HiveSelector(
-                hives: state.hives,
-                selectedHiveId: state.selectedHiveId,
-                onChanged: (hiveId) {
-                  if (hiveId != null) {
-                    context.read<DashboardBloc>().add(SelectHive(hiveId));
-                  }
-                },
-              ),
+            // Résumé Global
+            GlobalStatsCard(apiaries: state.apiaries),
 
-            // État actuel avec le nouveau widget optimisé
-            if (state.selectedHiveId != null)
-              StateStreamWidget(
-                hiveId: state.selectedHiveId!,
-                onRefresh: () =>
-                    context.read<DashboardBloc>().add(RefreshDashboard()),
-              ),
+            const SizedBox(height: 20),
 
-            // Configuration des seuils
-            const ThresholdConfig(),
+            // Mes Ruchers
+            ApiariesSection(apiaries: state.apiaries),
 
-            // Graphique des capteurs
-            if (state.apiaries.isNotEmpty)
-              SensorChart(
-                apiaryId: state.apiaries.first.id,
-                showAverageTemperature: true,
-              )
-            else
-              const SensorChart(),
+            const SizedBox(height: 20),
 
-            // Événements de dépassement de seuil
-            const ThresholdEvents(),
+            // Alertes Récentes
+            const RecentAlertsSection(),
+
+            const SizedBox(height: 20),
+
+            // Actions rapides
+            //const QuickActionsSection(),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NoHivesWidget extends StatelessWidget {
-  const _NoHivesWidget();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.hive_outlined,
-            size: 64,
-            color: Colors.amber,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Aucune ruche disponible',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Ajoutez une ruche pour commencer',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HiveSelector extends StatelessWidget {
-  final List<dynamic> hives;
-  final String? selectedHiveId;
-  final ValueChanged<String?> onChanged;
-
-  const _HiveSelector({
-    required this.hives,
-    required this.selectedHiveId,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: DropdownButton<String>(
-          value: selectedHiveId,
-          isExpanded: true,
-          hint: const Text('Sélectionner une ruche'),
-          onChanged: onChanged,
-          items: hives.map<DropdownMenuItem<String>>((hive) {
-            return DropdownMenuItem<String>(
-              value: hive.id,
-              child: Text(hive.name),
-            );
-          }).toList(),
         ),
       ),
     );

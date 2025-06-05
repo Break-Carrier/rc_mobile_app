@@ -1,10 +1,23 @@
 import 'package:equatable/equatable.dart';
 
-/// Entité utilisateur pour le domain layer
+/// Entité utilisateur représentant un utilisateur authentifié
+///
+/// Cette entité provient de Firebase Authentication et contient
+/// les informations de base d'authentification.
+///
+/// Pour les données métier étendues (ruchers, préférences),
+/// utiliser UserProfile dans Realtime Database avec user.id comme clé.
 class UserEntity extends Equatable {
+  /// Identifiant unique de l'utilisateur (Firebase UID)
   final String id;
+
+  /// Adresse email de l'utilisateur
   final String email;
+
+  /// Nom d'affichage (optionnel)
   final String? displayName;
+
+  /// Date de création du compte
   final DateTime? createdAt;
 
   const UserEntity({
@@ -14,14 +27,7 @@ class UserEntity extends Equatable {
     this.createdAt,
   });
 
-  @override
-  List<Object?> get props => [
-        id,
-        email,
-        displayName,
-        createdAt,
-      ];
-
+  /// Copie l'entité avec de nouvelles valeurs
   UserEntity copyWith({
     String? id,
     String? email,
@@ -35,4 +41,7 @@ class UserEntity extends Equatable {
       createdAt: createdAt ?? this.createdAt,
     );
   }
+
+  @override
+  List<Object?> get props => [id, email, displayName, createdAt];
 }

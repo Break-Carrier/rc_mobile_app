@@ -6,6 +6,7 @@ import '../../features/sensor/domain/entities/sensor_reading.dart';
 import '../../features/sensor/domain/entities/threshold_event.dart';
 import '../../features/sensor/domain/entities/time_filter.dart';
 import '../../features/apiary/data/injection/apiary_injection.dart';
+import '../../features/hive/data/injection/hive_injection.dart';
 import '../config/app_config.dart';
 import '../services/hive_service_coordinator.dart';
 
@@ -68,6 +69,7 @@ class ServiceFactory {
 
     // Initialiser les modules
     ApiaryInjection.setupApiaryDependencies();
+    HiveInjection.setupHiveDependencies();
 
     final coordinator = getHiveServiceCoordinator();
     await coordinator.initialize();
@@ -107,6 +109,7 @@ class ServiceFactory {
   static void reset() {
     _coordinator?.dispose();
     ApiaryInjection.resetApiaryDependencies();
+    HiveInjection.resetHiveDependencies();
     _firebaseService = null;
     _currentStateService = null;
     _sensorReadingService = null;

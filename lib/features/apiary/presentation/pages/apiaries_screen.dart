@@ -120,22 +120,22 @@ class _BuildApiariesList extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: Theme.of(context).colorScheme.primaryContainer,
             child: Row(
-              children: [
+                children: [
                 Icon(
                   Icons.wifi,
                   size: 16,
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
-                Text(
+                  Text(
                   'Synchronisation temps réel active',
                   style: TextStyle(
                     fontSize: 12,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
           ),
 
         // Message d'erreur
@@ -149,7 +149,7 @@ class _BuildApiariesList extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
-              children: [
+                children: [
                 Icon(
                   Icons.warning_outlined,
                   color: Theme.of(context).colorScheme.error,
@@ -219,9 +219,9 @@ class _BuildApiariesList extends StatelessWidget {
       builder: (dialogContext) => BlocProvider.value(
         value: context.read<ApiaryBloc>(),
         child: CreateApiaryDialog(apiary: apiary),
-      ),
-    );
-  }
+              ),
+            );
+          }
 
   void _showDeleteConfirmation(BuildContext context, dynamic apiary) {
     showDialog(
@@ -246,9 +246,9 @@ class _BuildApiariesList extends StatelessWidget {
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             child: const Text('Supprimer'),
-          ),
-        ],
-      ),
+                            ),
+                          ],
+                        ),
     );
   }
 }
@@ -268,14 +268,14 @@ class _BuildEmptyState extends StatelessWidget {
               color: Theme.of(context).colorScheme.outline,
             ),
             const SizedBox(height: 16),
-            Text(
+                          Text(
               'Aucun rucher',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Theme.of(context).colorScheme.outline,
                   ),
             ),
-            const SizedBox(height: 8),
-            Text(
+                        const SizedBox(height: 8),
+                            Text(
               'Créez votre premier rucher pour commencer à gérer vos ruches.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -289,9 +289,9 @@ class _BuildEmptyState extends StatelessWidget {
               label: const Text('Créer un rucher'),
             ),
           ],
-        ),
-      ),
-    );
+                  ),
+                ),
+              );
   }
 
   void _showCreateApiaryDialog(BuildContext context) {

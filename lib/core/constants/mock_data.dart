@@ -61,25 +61,25 @@ class MockData {
 
   /// Ruches échantillons
   static final List<Hive> _sampleHives = [
-    Hive(
+      Hive(
       id: 'hive_1',
-      name: 'Ruche Alpha',
+        name: 'Ruche Alpha',
       apiaryId: 'apiary_1',
       description: 'Ruche principale du rucher',
       createdAt: DateTime.now().subtract(const Duration(days: 30)),
       updatedAt: DateTime.now(),
-    ),
-    Hive(
+      ),
+      Hive(
       id: 'hive_2',
-      name: 'Ruche Beta',
+        name: 'Ruche Beta',
       apiaryId: 'apiary_1',
       description: 'Ruche secondaire',
       createdAt: DateTime.now().subtract(const Duration(days: 25)),
       updatedAt: DateTime.now(),
-    ),
-    Hive(
+      ),
+      Hive(
       id: 'hive_3',
-      name: 'Ruche Gamma',
+        name: 'Ruche Gamma',
       apiaryId: 'apiary_2',
       description: 'Nouvelle ruche',
       createdAt: DateTime.now().subtract(const Duration(days: 15)),
@@ -91,16 +91,16 @@ class MockData {
 
   /// Ruchers échantillons
   static final List<Apiary> _sampleApiaries = [
-    Apiary(
+      Apiary(
       id: 'apiary_1',
-      name: 'Rucher Principal',
+        name: 'Rucher Principal',
       location: 'Jardin du château',
       description: 'Le rucher principal avec nos meilleures ruches',
       createdAt: DateTime.now().subtract(const Duration(days: 60)),
       updatedAt: DateTime.now(),
       hiveIds: ['hive_1', 'hive_2'],
-    ),
-    Apiary(
+      ),
+      Apiary(
       id: 'apiary_2',
       name: 'Rucher Annexe',
       location: 'Prairie sud',

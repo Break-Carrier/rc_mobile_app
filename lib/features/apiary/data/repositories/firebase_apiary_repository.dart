@@ -46,27 +46,23 @@ class FirebaseApiaryRepository implements ApiaryRepository {
         return (result: <Apiary>[], error: null);
       }
 
-      // Récupérer les données des ruchers
+      // Récupérer les détails de chaque rucher
       final apiaries = <Apiary>[];
       for (final apiaryId in apiaryIds) {
         final apiarySnapshot = await _apiariesRef.child(apiaryId).get();
         if (apiarySnapshot.exists) {
           final apiaryData = apiarySnapshot.value as Map<dynamic, dynamic>;
-          final apiary = ApiaryModel.fromMap(apiaryId, apiaryData);
-          apiaries.add(apiary);
+          final apiaryModel = ApiaryModel.fromMap(apiaryId, apiaryData);
+          apiaries.add(apiaryModel);
         }
       }
 
-      _logger.d(
-          '${apiaries.length} ruchers récupérés pour l\'utilisateur: $userId');
+      _logger.d('${apiaries.length} ruchers récupérés');
       return (result: apiaries, error: null);
-    } catch (e, stackTrace) {
-      _logger.e('Erreur lors de la récupération des ruchers',
-          error: e, stackTrace: stackTrace);
-      return (
-        result: null,
-        error: Exception('Erreur lors de la récupération des ruchers: $e')
-      );
+    } catch (e) {
+      _logger.e('Erreur lors de la récupération des ruchers: $e');
+      // Return empty list instead of error to show empty state
+      return (result: <Apiary>[], error: null);
     }
   }
 

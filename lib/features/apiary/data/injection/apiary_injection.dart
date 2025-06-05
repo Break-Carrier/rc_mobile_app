@@ -1,6 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../auth/domain/usecases/get_auth_state.dart';
 import '../../domain/repositories/apiary_repository.dart';
@@ -11,6 +12,8 @@ import '../../domain/usecases/get_user_apiaries.dart';
 import '../../domain/usecases/update_apiary.dart';
 import '../../presentation/bloc/apiary_bloc.dart';
 import '../repositories/firebase_apiary_repository.dart';
+import '../../../auth/data/repositories/auth_repository_impl.dart';
+import '../../../auth/data/datasources/auth_remote_data_source.dart';
 
 /// Configuration de l'injection de dépendances pour le module Ruchers
 class ApiaryInjection {
@@ -28,7 +31,25 @@ class ApiaryInjection {
 
     // Use Cases utilitaires
     _getIt.registerLazySingleton<GetCurrentUserId>(
-      () => GetCurrentUserId(_getIt<GetAuthState>()),
+      () {
+        try {
+          return GetCurrentUserId(_getIt<GetAuthState>());
+        } catch (e) {
+          // Fallback : créer un GetAuthState temporaire si l'injection auth a échoué
+          final authState = GetAuthState(
+            AuthRepositoryImpl(
+              remoteDataSource: AuthRemoteDataSourceImpl(
+                firebaseAuth: FirebaseAuth.instance,
+              ),
+            ),
+          );
+          // L'enregistrer pour éviter de le recréer
+          if (!_getIt.isRegistered<GetAuthState>()) {
+            _getIt.registerLazySingleton<GetAuthState>(() => authState);
+          }
+          return GetCurrentUserId(authState);
+        }
+      },
     );
 
     // Use Cases CRUD

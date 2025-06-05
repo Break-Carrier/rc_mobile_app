@@ -1,12 +1,17 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../features/sensor/domain/entities/current_state.dart';
 import '../../features/sensor/domain/entities/sensor_reading.dart';
 import '../../features/sensor/domain/entities/threshold_event.dart';
 import '../../features/sensor/domain/entities/time_filter.dart';
 import '../../features/apiary/data/injection/apiary_injection.dart';
 import '../../features/hive/data/injection/hive_injection.dart';
+import '../../features/auth/di/auth_injection.dart';
+import '../../features/auth/domain/usecases/get_auth_state.dart';
+import '../../features/auth/data/repositories/auth_repository_impl.dart';
+import '../../features/auth/data/datasources/auth_remote_data_source.dart';
 import '../config/app_config.dart';
 import '../services/hive_service_coordinator.dart';
 
@@ -64,17 +69,60 @@ class ServiceFactory {
   static Future<void> initializeServices() async {
     if (_isInitialized) return;
 
-    // Initialiser les dépendances globales
-    _setupGlobalDependencies();
+    try {
+      // Initialiser les dépendances globales d'abord
+      _setupGlobalDependencies();
 
-    // Initialiser les modules
-    ApiaryInjection.setupApiaryDependencies();
-    HiveInjection.setupHiveDependencies();
+      // Maintenant on peut utiliser le logger
+      final logger = GetIt.instance<Logger>();
 
-    final coordinator = getHiveServiceCoordinator();
-    await coordinator.initialize();
+      logger.d('🔐 Initialisation des dépendances d\'authentification...');
+      // Initialiser les modules d'authentification d'abord
+      AuthInjection.setupAuthDependencies();
 
-    _isInitialized = true;
+      logger.d('🏠 Initialisation des dépendances d\'apiary...');
+      // Initialiser les autres modules
+      ApiaryInjection.setupApiaryDependencies();
+
+      logger.d('🐝 Initialisation des dépendances de ruche...');
+      HiveInjection.setupHiveDependencies();
+
+      logger.d('⚡ Initialisation du coordinateur...');
+      final coordinator = getHiveServiceCoordinator();
+      await coordinator.initialize();
+
+      _isInitialized = true;
+      logger.i('✅ Tous les services sont initialisés avec succès');
+    } catch (e, stackTrace) {
+      // En cas d'erreur, utiliser un logger basique ou créer une instance temporaire
+      final tempLogger = Logger();
+      tempLogger.e('❌ Erreur lors de l\'initialisation des services: $e');
+      tempLogger.e('Stack trace: $stackTrace');
+
+      // En cas d'erreur, essayer d'enregistrer GetAuthState manuellement
+      final getIt = GetIt.instance;
+      if (!getIt.isRegistered<GetAuthState>()) {
+        tempLogger
+            .d('🔧 Tentative d\'enregistrement manuel de GetAuthState...');
+        try {
+          // Créer un GetAuthState simple si l'injection normale échoue
+          final authState = GetAuthState(
+            // Pour l'instant, on peut créer un repository minimal
+            AuthRepositoryImpl(
+              remoteDataSource: AuthRemoteDataSourceImpl(
+                firebaseAuth: FirebaseAuth.instance,
+              ),
+            ),
+          );
+          getIt.registerLazySingleton<GetAuthState>(() => authState);
+          tempLogger.i('✅ GetAuthState enregistré manuellement');
+        } catch (authError) {
+          tempLogger.e('❌ Échec de l\'enregistrement manuel: $authError');
+        }
+      }
+
+      rethrow;
+    }
   }
 
   /// Configure les dépendances globales (Firebase, Logger, etc.)
@@ -110,6 +158,10 @@ class ServiceFactory {
     _coordinator?.dispose();
     ApiaryInjection.resetApiaryDependencies();
     HiveInjection.resetHiveDependencies();
+
+    // Reset auth dependencies
+    AuthInjection.resetAuthDependencies();
+
     _firebaseService = null;
     _currentStateService = null;
     _sensorReadingService = null;

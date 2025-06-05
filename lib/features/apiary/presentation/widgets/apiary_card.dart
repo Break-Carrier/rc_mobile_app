@@ -31,9 +31,9 @@ class ApiaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          children: [
               Row(
                 children: [
                   Container(
@@ -50,9 +50,9 @@ class ApiaryCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
                         Text(
                           apiary.name,
                           style:
@@ -61,17 +61,17 @@ class ApiaryCard extends StatelessWidget {
                                   ),
                         ),
                         const SizedBox(height: 2),
-                        Row(
-                          children: [
+            Row(
+              children: [
                             Icon(
                               Icons.location_on_outlined,
                               size: 14,
                               color: Theme.of(context).colorScheme.outline,
                             ),
                             const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                apiary.location,
+                Expanded(
+                  child: Text(
+                    apiary.location,
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall
@@ -118,31 +118,31 @@ class ApiaryCard extends StatelessWidget {
                             Text('Supprimer',
                                 style: TextStyle(color: Colors.red)),
                           ],
-                        ),
-                      ),
-                    ],
                   ),
-                ],
+                ),
+              ],
+            ),
+          ],
               ),
               if (apiary.description.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(
                   apiary.description,
                   style: Theme.of(context).textTheme.bodyMedium,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
               const SizedBox(height: 12),
-              Row(
-                children: [
+          Row(
+            children: [
                   _StatChip(
                     icon: Icons.widgets_outlined,
                     label: '${apiary.hiveCount} ruches',
                     color: Theme.of(context).colorScheme.secondary,
                   ),
                   if (apiary.hasCoordinates) ...[
-                    const SizedBox(width: 8),
+              const SizedBox(width: 8),
                     _StatChip(
                       icon: Icons.gps_fixed,
                       label: 'GPS',
@@ -150,7 +150,7 @@ class ApiaryCard extends StatelessWidget {
                     ),
                   ],
                   const Spacer(),
-                  Text(
+              Text(
                     _formatDate(apiary.createdAt),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.outline,

@@ -119,7 +119,7 @@ class SettingsScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          title,
+            title,
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -153,3 +153,4 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
+ 

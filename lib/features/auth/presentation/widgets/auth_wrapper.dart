@@ -3,13 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_state.dart';
 import '../pages/login_page.dart';
-import '../../../../screens/home_screen.dart';
+import '../../../../screens/main_screen.dart';
 
 /// Widget wrapper qui gère l'authentification obligatoire
 ///
 /// Vérifie l'état d'authentification et redirige :
 /// - Vers LoginPage si non authentifié
-/// - Vers HomeScreen si authentifié
+/// - Vers MainScreen avec navigation si authentifié
 /// - Affiche un loading pendant la vérification
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
@@ -25,8 +25,8 @@ class AuthWrapper extends StatelessWidget {
           // Chargement de l'authentification
           AuthLoading() => const _LoadingScreen(),
 
-          // Utilisateur authentifié - Accès à l'application
-          AuthAuthenticated() => const HomeScreen(),
+          // Utilisateur authentifié - Accès à l'application principale
+          AuthAuthenticated() => const MainScreen(),
 
           // Utilisateur non authentifié - Redirection login
           AuthUnauthenticated() => const LoginPage(),

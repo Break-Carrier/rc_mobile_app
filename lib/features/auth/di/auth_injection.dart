@@ -7,7 +7,7 @@ import '../domain/usecases/get_auth_state.dart';
 import '../domain/usecases/sign_in_with_email_password.dart';
 import '../domain/usecases/sign_up_with_email_password.dart';
 import '../domain/usecases/sign_out.dart';
-import '../domain/usecases/navigate_to_auth_info.dart';
+import '../domain/usecases/auth_navigation_usecases.dart';
 import '../presentation/bloc/auth_bloc.dart';
 import '../presentation/bloc/auth_navigation_bloc.dart';
 
@@ -20,7 +20,6 @@ class AuthInjection {
   static SignInWithEmailPassword? _signInWithEmailPassword;
   static SignUpWithEmailPassword? _signUpWithEmailPassword;
   static SignOut? _signOut;
-  static NavigateToAuthInfo? _navigateToAuthInfo;
   static ShowLogoutDialog? _showLogoutDialog;
   static ShowAuthNotification? _showAuthNotification;
   static AuthBloc? _authBloc;
@@ -65,10 +64,6 @@ class AuthInjection {
   }
 
   /// Use Cases - Navigation
-  static NavigateToAuthInfo getNavigateToAuthInfoUseCase() {
-    return _navigateToAuthInfo ??= NavigateToAuthInfo(getNavigationService());
-  }
-
   static ShowLogoutDialog getShowLogoutDialogUseCase() {
     return _showLogoutDialog ??= ShowLogoutDialog(getNavigationService());
   }
@@ -90,7 +85,6 @@ class AuthInjection {
 
   static AuthNavigationBloc getAuthNavigationBloc() {
     return _authNavigationBloc ??= AuthNavigationBloc(
-      navigateToAuthInfo: getNavigateToAuthInfoUseCase(),
       showLogoutDialog: getShowLogoutDialogUseCase(),
       showAuthNotification: getShowAuthNotificationUseCase(),
       authBloc: getAuthBloc(),
@@ -108,7 +102,6 @@ class AuthInjection {
     _signInWithEmailPassword = null;
     _signUpWithEmailPassword = null;
     _signOut = null;
-    _navigateToAuthInfo = null;
     _showLogoutDialog = null;
     _showAuthNotification = null;
     _authBloc = null;

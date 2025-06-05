@@ -14,7 +14,6 @@ import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/bloc/auth_navigation_bloc.dart';
 import 'features/auth/di/auth_injection.dart';
 import 'features/auth/presentation/widgets/auth_wrapper.dart';
-import 'features/auth/presentation/pages/auth_info_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,8 +41,7 @@ class MyApp extends StatelessWidget {
       providers: [
         // Fournisseur BLoC d'authentification
         BlocProvider<AuthBloc>(
-          create: (context) =>
-              AuthInjection.getAuthBloc()..add(const AuthCheckRequested()),
+          create: (context) => AuthInjection.getAuthBloc(),
         ),
 
         // Fournisseur BLoC de navigation d'authentification
@@ -65,9 +63,6 @@ class MyApp extends StatelessWidget {
           Locale('fr', ''),
         ],
         home: const AuthWrapper(),
-        routes: {
-          AppRoutes.authInfo: (context) => const AuthInfoPage(),
-        },
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../domain/usecases/navigate_to_auth_info.dart';
+import '../../domain/usecases/auth_navigation_usecases.dart';
 import 'auth_bloc.dart';
 import 'auth_event.dart';
 
@@ -10,11 +10,6 @@ abstract class AuthNavigationEvent extends Equatable {
 
   @override
   List<Object?> get props => [];
-}
-
-/// Demande de navigation vers les informations d'authentification
-class NavigateToAuthInfoRequested extends AuthNavigationEvent {
-  const NavigateToAuthInfoRequested();
 }
 
 /// Demande d'affichage du dialogue de déconnexion
@@ -66,43 +61,19 @@ class LogoutConfirmed extends AuthNavigationState {
 /// pour respecter le principe de responsabilité unique
 class AuthNavigationBloc
     extends Bloc<AuthNavigationEvent, AuthNavigationState> {
-  final NavigateToAuthInfo _navigateToAuthInfo;
   final ShowLogoutDialog _showLogoutDialog;
   final ShowAuthNotification _showAuthNotification;
   final AuthBloc _authBloc;
 
   AuthNavigationBloc({
-    required NavigateToAuthInfo navigateToAuthInfo,
     required ShowLogoutDialog showLogoutDialog,
     required ShowAuthNotification showAuthNotification,
     required AuthBloc authBloc,
-  })  : _navigateToAuthInfo = navigateToAuthInfo,
-        _showLogoutDialog = showLogoutDialog,
+  })  : _showLogoutDialog = showLogoutDialog,
         _showAuthNotification = showAuthNotification,
         _authBloc = authBloc,
         super(const AuthNavigationInitial()) {
-    on<NavigateToAuthInfoRequested>(_onNavigateToAuthInfoRequested);
     on<ShowLogoutDialogRequested>(_onShowLogoutDialogRequested);
-  }
-
-  /// Gère la navigation vers les informations d'authentification
-  Future<void> _onNavigateToAuthInfoRequested(
-    NavigateToAuthInfoRequested event,
-    Emitter<AuthNavigationState> emit,
-  ) async {
-    emit(const AuthNavigationLoading());
-
-    try {
-      await _navigateToAuthInfo();
-      emit(const AuthNavigationSuccess(
-        message: 'Navigation vers les informations d\'authentification',
-      ));
-    } catch (e) {
-      _showAuthNotification.showError(
-        'Erreur lors de la navigation: ${e.toString()}',
-      );
-      emit(const AuthNavigationInitial());
-    }
   }
 
   /// Gère l'affichage du dialogue de déconnexion

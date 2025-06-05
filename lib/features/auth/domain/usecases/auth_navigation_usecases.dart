@@ -1,21 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/navigation/navigation_service.dart';
 
-/// Use case pour naviguer vers la page d'informations d'authentification
-///
-/// Suit les principes Clean Architecture en encapsulant
-/// la logique de navigation dans un use case
-class NavigateToAuthInfo {
-  final NavigationService _navigationService;
-
-  const NavigateToAuthInfo(this._navigationService);
-
-  /// Exécute la navigation vers la page d'informations d'authentification
-  Future<void> call() async {
-    await _navigationService.navigateTo(AppRoutes.authInfo);
-  }
-}
-
 /// Use case pour afficher une boîte de dialogue de déconnexion
 class ShowLogoutDialog {
   final NavigationService _navigationService;

@@ -34,31 +34,53 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<SignUpRequested>(_onSignUpRequested);
     on<SignOutRequested>(_onSignOutRequested);
 
-    // Démarrer l'écoute de l'état d'authentification
+    // Démarrer l'écoute de l'état d'authentification avec gestion d'erreur
     _startAuthStateListener();
+
+    // Déclencher une vérification initiale de l'état
+    add(const AuthCheckRequested());
   }
 
-  /// Démarre l'écoute de l'état d'authentification
+  /// Démarre l'écoute de l'état d'authentification avec gestion d'erreur robuste
   void _startAuthStateListener() {
-    _authStateSubscription = _getAuthState().listen((user) {
-      if (user != null) {
-        add(AuthCheckRequested());
-      } else {
-        add(AuthCheckRequested());
-      }
-    });
+    try {
+      _authStateSubscription = _getAuthState().listen(
+        (user) {
+          try {
+            // Déclenche une vérification d'état au lieu d'émettre directement
+            add(AuthCheckRequested());
+          } catch (e) {
+            // En cas d'erreur, déclenche également une vérification d'état
+            add(AuthCheckRequested());
+          }
+        },
+        onError: (error) {
+          // En cas d'erreur du stream, déclenche une vérification d'état
+          add(AuthCheckRequested());
+        },
+      );
+    } catch (e) {
+      // En cas d'erreur de configuration, déclenche une vérification d'état
+      add(AuthCheckRequested());
+    }
   }
 
-  /// Vérifie l'état d'authentification actuel
+  /// Vérifie l'état d'authentification actuel avec gestion d'erreur
   Future<void> _onAuthCheckRequested(
     AuthCheckRequested event,
     Emitter<AuthState> emit,
   ) async {
-    final currentUser = _getAuthState.getCurrentUser();
-    if (currentUser != null) {
-      emit(AuthAuthenticated(user: currentUser));
-    } else {
-      emit(const AuthUnauthenticated());
+    try {
+      final currentUser = _getAuthState.getCurrentUser();
+      if (currentUser != null) {
+        emit(AuthAuthenticated(user: currentUser));
+      } else {
+        emit(const AuthUnauthenticated());
+      }
+    } catch (e) {
+      emit(AuthError(
+          failure: UnknownFailure(
+              'Erreur lors de la vérification: ${e.toString()}')));
     }
   }
 
@@ -69,14 +91,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
 
-    final result = await _signInWithEmailPassword(
-      SignInParams(email: event.email, password: event.password),
-    );
+    try {
+      final result = await _signInWithEmailPassword(
+        SignInParams(email: event.email, password: event.password),
+      );
 
-    if (result.error != null) {
-      emit(AuthError(failure: result.error! as AuthFailure));
+      if (result.error != null) {
+        emit(AuthError(failure: result.error!));
+      }
+      // Le succès sera géré par l'écoute du stream authStateChanges
+    } catch (e) {
+      emit(AuthError(
+          failure: UnknownFailure('Erreur de connexion: ${e.toString()}')));
     }
-    // Le succès sera géré par l'écoute du stream authStateChanges
   }
 
   /// Gère l'inscription avec email et mot de passe
@@ -86,14 +113,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
 
-    final result = await _signUpWithEmailPassword(
-      SignUpParams(email: event.email, password: event.password),
-    );
+    try {
+      final result = await _signUpWithEmailPassword(
+        SignUpParams(email: event.email, password: event.password),
+      );
 
-    if (result.error != null) {
-      emit(AuthError(failure: result.error! as AuthFailure));
+      if (result.error != null) {
+        emit(AuthError(failure: result.error!));
+      }
+      // Le succès sera géré par l'écoute du stream authStateChanges
+    } catch (e) {
+      emit(AuthError(
+          failure: UnknownFailure('Erreur d\'inscription: ${e.toString()}')));
     }
-    // Le succès sera géré par l'écoute du stream authStateChanges
   }
 
   /// Gère la déconnexion
@@ -103,12 +135,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
 
-    final error = await _signOut();
+    try {
+      final error = await _signOut();
 
-    if (error != null) {
-      emit(AuthError(failure: error as AuthFailure));
+      if (error != null) {
+        emit(AuthError(failure: error));
+      }
+      // Le succès sera géré par l'écoute du stream authStateChanges
+    } catch (e) {
+      emit(AuthError(
+          failure: UnknownFailure('Erreur de déconnexion: ${e.toString()}')));
     }
-    // Le succès sera géré par l'écoute du stream authStateChanges
   }
 
   @override

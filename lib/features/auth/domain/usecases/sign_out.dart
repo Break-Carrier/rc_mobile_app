@@ -1,15 +1,15 @@
-import '../../../../core/usecases/usecase.dart';
+import '../../../../core/error/auth_failures.dart';
 import '../repositories/auth_repository.dart';
 
 /// Use case pour la déconnexion
-class SignOut implements VoidUseCase0 {
+class SignOut {
   final AuthRepository repository;
 
   SignOut(this.repository);
 
-  @override
-  Future<Exception?> call() async {
+  /// Exécute la déconnexion
+  Future<AuthFailure?> call() async {
     final error = await repository.signOut();
-    return error as Exception?;
+    return error;
   }
 }

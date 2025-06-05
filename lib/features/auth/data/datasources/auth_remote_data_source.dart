@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:logger/logger.dart';
 import '../models/user_model.dart';
 
 /// Interface de la source de données distante pour l'authentification
@@ -27,6 +28,7 @@ abstract class AuthRemoteDataSource {
 /// Implémentation de la source de données distante avec Firebase
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final FirebaseAuth _firebaseAuth;
+  final Logger _logger = Logger();
 
   AuthRemoteDataSourceImpl({
     required FirebaseAuth firebaseAuth,
@@ -35,14 +37,30 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Stream<UserModel?> get authStateChanges {
     return _firebaseAuth.authStateChanges().map((user) {
-      return user != null ? UserModel.fromFirebaseUser(user) : null;
+      try {
+        return user != null ? UserModel.fromFirebaseUser(user) : null;
+      } catch (e) {
+        // Gestion des erreurs de conversion Firebase Auth (PigeonUserDetails)
+        _logger.e('Erreur de conversion Firebase Auth: $e');
+        return null;
+      }
+    }).handleError((error) {
+      // Gestion des erreurs du stream Firebase Auth
+      _logger.e('Erreur du stream Firebase Auth: $error');
+      return null;
     });
   }
 
   @override
   UserModel? get currentUser {
-    final user = _firebaseAuth.currentUser;
-    return user != null ? UserModel.fromFirebaseUser(user) : null;
+    try {
+      final user = _firebaseAuth.currentUser;
+      return user != null ? UserModel.fromFirebaseUser(user) : null;
+    } catch (e) {
+      // Gestion des erreurs d'accès à l'utilisateur actuel
+      _logger.e('Erreur d\'accès à l\'utilisateur actuel: $e');
+      return null;
+    }
   }
 
   @override

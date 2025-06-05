@@ -1,16 +1,16 @@
 import 'package:equatable/equatable.dart';
-import '../../../../core/usecases/usecase.dart';
+import '../../../../core/error/auth_failures.dart';
 import '../entities/user_entity.dart';
 import '../repositories/auth_repository.dart';
 
 /// Use case pour la connexion avec email et mot de passe
-class SignInWithEmailPassword implements UseCase<UserEntity, SignInParams> {
+class SignInWithEmailPassword {
   final AuthRepository repository;
 
   SignInWithEmailPassword(this.repository);
 
-  @override
-  Future<({UserEntity? result, Exception? error})> call(
+  /// Exécute la connexion avec email et mot de passe
+  Future<({UserEntity? result, AuthFailure? error})> call(
       SignInParams params) async {
     final response = await repository.signInWithEmailAndPassword(
       email: params.email,
@@ -19,7 +19,7 @@ class SignInWithEmailPassword implements UseCase<UserEntity, SignInParams> {
 
     return (
       result: response.user,
-      error: response.error as Exception?,
+      error: response.error,
     );
   }
 }

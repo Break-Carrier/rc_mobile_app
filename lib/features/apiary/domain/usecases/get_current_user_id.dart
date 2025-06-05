@@ -12,9 +12,9 @@ class GetCurrentUserId {
       final user = _getAuthState.getCurrentUser();
       return user?.id;
     } catch (e) {
-      // Fallback temporaire pour éviter les crashes d'injection
-      // En production, cela devrait retourner null et gérer l'état non connecté
-      return 'mock_user_id';
+      // Retourner null quand l'utilisateur n'est pas connecté
+      // permet à ApiaryBloc d'émettre une erreur explicite
+      return null;
     }
   }
 }

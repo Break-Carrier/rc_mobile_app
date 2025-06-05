@@ -1,8 +1,11 @@
 import 'package:firebase_database/firebase_database.dart';
+import 'package:get_it/get_it.dart';
+import 'package:logger/logger.dart';
 import '../../features/sensor/domain/entities/current_state.dart';
 import '../../features/sensor/domain/entities/sensor_reading.dart';
 import '../../features/sensor/domain/entities/threshold_event.dart';
 import '../../features/sensor/domain/entities/time_filter.dart';
+import '../../features/apiary/data/injection/apiary_injection.dart';
 import '../config/app_config.dart';
 import '../services/hive_service_coordinator.dart';
 
@@ -13,6 +16,7 @@ class ServiceFactory {
   static SensorReadingService? _sensorReadingService;
   static ThresholdEventService? _thresholdEventService;
   static HiveServiceCoordinator? _coordinator;
+  static bool _isInitialized = false;
 
   /// Service Firebase partagé
   static FirebaseService get firebaseService {
@@ -57,18 +61,58 @@ class ServiceFactory {
 
   /// Initialise tous les services
   static Future<void> initializeServices() async {
+    if (_isInitialized) return;
+
+    // Initialiser les dépendances globales
+    _setupGlobalDependencies();
+
+    // Initialiser les modules
+    ApiaryInjection.setupApiaryDependencies();
+
     final coordinator = getHiveServiceCoordinator();
     await coordinator.initialize();
+
+    _isInitialized = true;
+  }
+
+  /// Configure les dépendances globales (Firebase, Logger, etc.)
+  static void _setupGlobalDependencies() {
+    final getIt = GetIt.instance;
+
+    // Firebase Database
+    if (!getIt.isRegistered<FirebaseDatabase>()) {
+      getIt.registerLazySingleton<FirebaseDatabase>(
+        () => FirebaseDatabase.instance,
+      );
+    }
+
+    // Logger
+    if (!getIt.isRegistered<Logger>()) {
+      getIt.registerLazySingleton<Logger>(
+        () => Logger(
+          printer: PrettyPrinter(
+            methodCount: 2,
+            errorMethodCount: 8,
+            lineLength: 120,
+            colors: true,
+            printEmojis: true,
+            dateTimeFormat: DateTimeFormat.none,
+          ),
+        ),
+      );
+    }
   }
 
   /// Nettoyage pour les tests
   static void reset() {
     _coordinator?.dispose();
+    ApiaryInjection.resetApiaryDependencies();
     _firebaseService = null;
     _currentStateService = null;
     _sensorReadingService = null;
     _thresholdEventService = null;
     _coordinator = null;
+    _isInitialized = false;
   }
 }
 

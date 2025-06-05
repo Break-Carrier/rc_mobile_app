@@ -9,6 +9,7 @@ import '../../domain/usecases/delete_apiary.dart';
 import '../../domain/usecases/get_current_user_id.dart';
 import '../../domain/usecases/get_user_apiaries.dart';
 import '../../domain/usecases/update_apiary.dart';
+import '../../presentation/bloc/apiary_bloc.dart';
 import '../repositories/firebase_apiary_repository.dart';
 
 /// Configuration de l'injection de dépendances pour le module Ruchers
@@ -58,10 +59,27 @@ class ApiaryInjection {
         _getIt<GetCurrentUserId>(),
       ),
     );
+
+    // BLoC
+    _getIt.registerFactory<ApiaryBloc>(
+      () => ApiaryBloc(
+        getUserApiaries: _getIt<GetUserApiaries>(),
+        createApiary: _getIt<CreateApiary>(),
+        updateApiary: _getIt<UpdateApiary>(),
+        deleteApiary: _getIt<DeleteApiary>(),
+        logger: _getIt<Logger>(),
+      ),
+    );
   }
+
+  /// Récupère une instance du BLoC
+  static ApiaryBloc getApiaryBloc() => _getIt<ApiaryBloc>();
 
   /// Supprime toutes les dépendances du module (pour les tests)
   static void resetApiaryDependencies() {
+    if (_getIt.isRegistered<ApiaryBloc>()) {
+      _getIt.unregister<ApiaryBloc>();
+    }
     if (_getIt.isRegistered<ApiaryRepository>()) {
       _getIt.unregister<ApiaryRepository>();
     }

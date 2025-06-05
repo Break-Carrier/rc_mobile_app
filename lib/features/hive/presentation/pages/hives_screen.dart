@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/models/hive.dart';
+import '../../../sensor/domain/entities/hive.dart';
 import '../../../../core/models/hive_status.dart';
 import '../../../apiary/domain/bloc/hives_bloc.dart';
 

@@ -9,8 +9,7 @@ class SensorRepository implements ISensorRepository {
   final FirebaseService _firebaseService;
 
   SensorRepository({FirebaseService? firebaseService})
-      : _firebaseService =
-            firebaseService ?? ServiceFactory.getFirebaseService();
+      : _firebaseService = firebaseService ?? ServiceFactory.firebaseService;
 
   @override
   Future<List<SensorReading>> getLatestReadings(String sensorId,

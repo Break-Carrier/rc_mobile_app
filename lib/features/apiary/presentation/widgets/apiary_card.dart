@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/models/apiary.dart';
+import '../../../sensor/domain/entities/apiary.dart';
 
 /// Widget pour afficher un rucher sous forme de carte
 class ApiaryCard extends StatelessWidget {

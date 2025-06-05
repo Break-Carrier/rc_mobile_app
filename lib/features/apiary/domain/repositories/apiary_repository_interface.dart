@@ -1,5 +1,5 @@
-import '../../../../core/models/apiary.dart';
-import '../../../../core/models/hive.dart';
+import '../../../sensor/domain/entities/apiary.dart';
+import '../../../sensor/domain/entities/hive.dart';
 
 /// Interface définissant les méthodes d'accès aux données des ruchers
 abstract class IApiaryRepository {

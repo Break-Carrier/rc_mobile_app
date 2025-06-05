@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/threshold_event.dart';
+import '../../../features/sensor/domain/entities/threshold_event.dart';
 
 class EventItem extends StatelessWidget {
   final ThresholdEvent event;
@@ -79,7 +79,7 @@ class EventItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          event.description,
+          _getEventDescription(),
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
@@ -89,9 +89,9 @@ class EventItem extends StatelessWidget {
         Row(
           children: [
             _buildDetailChip(
-              icon: Icons.water_drop,
-              color: Colors.blue,
-              text: '${event.humidity.toStringAsFixed(1)}%',
+              icon: _getTypeIcon(),
+              color: _getTypeColor(),
+              text: '${event.value.toStringAsFixed(1)} ${_getUnit()}',
             ),
             const SizedBox(width: 12),
             _buildDetailChip(
@@ -99,6 +99,24 @@ class EventItem extends StatelessWidget {
               color: Colors.grey[600]!,
               text: dateFormatted,
             ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            _buildDetailChip(
+              icon: Icons.warning,
+              color: _getSeverityColor(),
+              text:
+                  'Seuil: ${event.threshold.toStringAsFixed(1)} ${_getUnit()}',
+            ),
+            const SizedBox(width: 12),
+            if (event.isResolved)
+              _buildDetailChip(
+                icon: Icons.check_circle,
+                color: Colors.green,
+                text: 'Résolu',
+              ),
           ],
         ),
       ],
@@ -126,29 +144,133 @@ class EventItem extends StatelessWidget {
     );
   }
 
-  EventTheme _getEventTheme() {
-    if (event.isExceeded) {
-      if (event.isHighTemperature) {
-        return EventTheme(
-          color: Colors.red,
-          icon: Icons.thermostat,
-        );
-      } else if (event.isLowTemperature) {
-        return EventTheme(
-          color: Colors.blue,
-          icon: Icons.ac_unit,
-        );
-      } else {
-        return EventTheme(
-          color: Colors.amber,
-          icon: Icons.warning_rounded,
-        );
-      }
+  String _getEventDescription() {
+    final typeText = _getTypeText();
+    final severityText = _getSeverityText();
+
+    if (event.isResolved) {
+      return '$typeText - $severityText (Résolu)';
     } else {
+      return '$typeText - $severityText';
+    }
+  }
+
+  String _getTypeText() {
+    switch (event.type.toLowerCase()) {
+      case 'temperature':
+        return 'Température';
+      case 'humidity':
+        return 'Humidité';
+      case 'weight':
+        return 'Poids';
+      default:
+        return event.type;
+    }
+  }
+
+  String _getSeverityText() {
+    switch (event.severity.toLowerCase()) {
+      case 'critical':
+        return 'Critique';
+      case 'high':
+        return 'Élevé';
+      case 'medium':
+        return 'Moyen';
+      case 'low':
+        return 'Faible';
+      default:
+        return event.severity;
+    }
+  }
+
+  String _getUnit() {
+    switch (event.type.toLowerCase()) {
+      case 'temperature':
+        return '°C';
+      case 'humidity':
+        return '%';
+      case 'weight':
+        return 'kg';
+      default:
+        return '';
+    }
+  }
+
+  IconData _getTypeIcon() {
+    switch (event.type.toLowerCase()) {
+      case 'temperature':
+        return Icons.thermostat;
+      case 'humidity':
+        return Icons.water_drop;
+      case 'weight':
+        return Icons.monitor_weight;
+      default:
+        return Icons.sensors;
+    }
+  }
+
+  Color _getTypeColor() {
+    switch (event.type.toLowerCase()) {
+      case 'temperature':
+        return Colors.red;
+      case 'humidity':
+        return Colors.blue;
+      case 'weight':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Color _getSeverityColor() {
+    switch (event.severity.toLowerCase()) {
+      case 'critical':
+        return Colors.red;
+      case 'high':
+        return Colors.orange;
+      case 'medium':
+        return Colors.yellow;
+      case 'low':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  EventTheme _getEventTheme() {
+    if (event.isResolved) {
       return EventTheme(
         color: Colors.green,
         icon: Icons.check_circle,
       );
+    }
+
+    switch (event.severity.toLowerCase()) {
+      case 'critical':
+        return EventTheme(
+          color: Colors.red,
+          icon: Icons.error,
+        );
+      case 'high':
+        return EventTheme(
+          color: Colors.orange,
+          icon: Icons.warning,
+        );
+      case 'medium':
+        return EventTheme(
+          color: Colors.yellow,
+          icon: Icons.info,
+        );
+      case 'low':
+        return EventTheme(
+          color: Colors.blue,
+          icon: Icons.info_outline,
+        );
+      default:
+        return EventTheme(
+          color: Colors.grey,
+          icon: Icons.help_outline,
+        );
     }
   }
 }

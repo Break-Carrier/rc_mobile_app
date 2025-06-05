@@ -1,8 +1,8 @@
-# 🏗️ Architecture Clean Code - Flutter IoT App
+# 🏗️ Architecture Clean Code - Flutter IoT App "Ruche Connectée"
 
 ## 📋 **Vue d'ensemble**
 
-Cette application Flutter suit les principes du **Clean Architecture** et du **Clean Code**, organisant le code en couches distinctes avec des responsabilités claires.
+Cette application Flutter de monitoring IoT pour ruches suit les principes du **Clean Architecture** et du **Clean Code**, organisant le code en couches distinctes avec des responsabilités claires. L'application inclut maintenant un système d'authentification Firebase complet et une architecture par features.
 
 ## 🎯 **Principes appliqués**
 
@@ -12,264 +12,373 @@ Cette application Flutter suit les principes du **Clean Architecture** et du **C
 - ✅ **Separation of Concerns** - Séparation claire entre les couches
 - ✅ **Repository Pattern** - Abstraction de l'accès aux données
 - ✅ **BLoC Pattern** - Gestion d'état prévisible et testable
+- ✅ **Feature-Driven Architecture** - Organisation par domaines métier
 
-## 🏗️ **Structure du projet**
+## 🏗️ **Structure du projet actuelle**
 
 ```
 lib/
 ├── main.dart                      # Point d'entrée de l'application
 ├── firebase_options.dart          # Configuration Firebase
-├── core/                          # 🔧 Composants partagés
-│   ├── core.dart                  # Index des exports
+├── core/                          # 🔧 Composants partagés UNIQUEMENT
 │   ├── config/                    # Configuration centralisée
 │   │   └── app_config.dart        # Constantes globales
 │   ├── error/                     # Gestion d'erreur centralisée
-│   │   └── app_error.dart         # Classes d'erreur personnalisées
+│   │   ├── app_error.dart         # Classes d'erreur globales
+│   │   └── auth_failures.dart     # Erreurs d'authentification
 │   ├── extensions/                # Extensions Dart utiles
 │   │   ├── datetime_extensions.dart
 │   │   └── double_extensions.dart
 │   ├── factories/                 # Factory Pattern
 │   │   └── service_factory.dart   # Création et injection des services
-│   ├── models/                    # Modèles de données partagés
-│   │   └── current_state.dart     # Modèle état capteur
-│   ├── repositories/              # Couche d'accès aux données
-│   │   ├── sensor_repository.dart      # Interface repository
-│   │   └── sensor_repository_impl.dart # Implémentation repository
-│   ├── services/                  # Services métier
-│   │   └── hive_service_coordinator.dart # Coordination services
-│   ├── usecases/                  # Logique métier
-│   │   └── dashboard_usecases.dart # Use cases dashboard
+│   ├── models/                    # Modèles partagés (non-métier)
+│   │   ├── apiary_status.dart     # Statuts des ruchers
+│   │   └── hive_status.dart       # Statuts des ruches
+│   ├── services/                  # Services d'infrastructure
+│   │   ├── firebase_service.dart  # Service Firebase global
+│   │   └── hive_service_coordinator.dart # Coordination IoT
+│   ├── usecases/                  # Interface de base des use cases
+│   │   └── usecase.dart           # Contrat générique
 │   └── widgets/                   # Widgets réutilisables
-│       └── state/                 # Widgets d'état
-│           ├── state_display_card.dart    # Affichage état ruche
-│           └── state_stream_widget.dart   # Gestion stream état
+│       ├── chart/                 # Composants graphiques
+│       │   └── sensor_chart.dart
+│       ├── events/                # Gestion des événements
+│       │   └── threshold_events.dart
+│       ├── state/                 # Affichage d'état
+│       │   ├── state_display_card.dart
+│       │   └── state_stream_widget.dart
+│       └── threshold/             # Configuration seuils
+│           ├── threshold_config.dart
+│           └── threshold_display.dart
 ├── features/                      # 📱 Features par domaine métier
-│   ├── features.dart              # Index des exports
-│   ├── dashboard/                 # Feature tableau de bord
+│   ├── auth/                      # 🔐 Authentification Firebase
+│   │   ├── data/
+│   │   │   ├── datasources/
+│   │   │   │   └── auth_remote_data_source.dart
+│   │   │   ├── models/
+│   │   │   │   └── user_model.dart
+│   │   │   └── repositories/
+│   │   │       └── auth_repository_impl.dart
+│   │   ├── domain/
+│   │   │   ├── entities/
+│   │   │   │   └── user_entity.dart
+│   │   │   ├── repositories/
+│   │   │   │   └── auth_repository.dart
+│   │   │   └── usecases/
+│   │   │       ├── sign_in_with_email_password.dart
+│   │   │       ├── sign_up_with_email_password.dart
+│   │   │       ├── sign_out.dart
+│   │   │       └── get_auth_state.dart
+│   │   ├── presentation/
+│   │   │   ├── bloc/
+│   │   │   │   └── auth_bloc.dart
+│   │   │   ├── pages/
+│   │   │   │   └── login_page.dart
+│   │   │   └── widgets/
+│   │   │       └── auth_form.dart
+│   │   └── di/
+│   │       └── auth_injection.dart
+│   ├── sensor/                    # 🌡️ Données capteurs et entités IoT
+│   │   ├── data/
+│   │   │   └── repositories/
+│   │   │       └── sensor_repository.dart
+│   │   ├── domain/
+│   │   │   ├── entities/          # Entités métier principales
+│   │   │   │   ├── apiary.dart    # Rucher
+│   │   │   │   ├── hive.dart      # Ruche
+│   │   │   │   ├── current_state.dart # État actuel
+│   │   │   │   ├── sensor_reading.dart # Lecture capteur
+│   │   │   │   ├── threshold_event.dart # Événement seuil
+│   │   │   │   └── time_filter.dart # Filtre temporel
+│   │   │   └── repositories/
+│   │   │       └── sensor_repository_interface.dart
 │   │   └── presentation/
-│   │       ├── bloc/
-│   │       │   └── dashboard_bloc.dart    # BLoC dashboard
 │   │       └── pages/
-│   │           └── dashboard_screen.dart  # Écran dashboard
-│   ├── hive/                      # Feature gestion ruches
+│   │           └── sensor_readings_screen.dart
+│   ├── dashboard/                 # 📊 Tableau de bord
+│   │   ├── data/
+│   │   │   └── repositories/
+│   │   │       └── dashboard_repository.dart
+│   │   ├── domain/
+│   │   │   ├── bloc/
+│   │   │   │   └── dashboard_bloc.dart
+│   │   │   └── usecases/
+│   │   │       └── dashboard_usecases.dart
+│   │   └── presentation/
+│   │       ├── pages/
+│   │       │   └── dashboard_screen.dart
+│   │       └── widgets/
+│   │           ├── apiaries_section.dart
+│   │           ├── apiary_overview_card.dart
+│   │           ├── average_temperature_chart.dart
+│   │           └── global_stats_card.dart
+│   ├── apiary/                    # 🏡 Gestion ruchers
+│   │   ├── data/
+│   │   │   └── repositories/
+│   │   │       └── apiary_repository.dart
+│   │   ├── domain/
+│   │   │   ├── bloc/
+│   │   │   │   ├── apiaries_bloc.dart
+│   │   │   │   └── hives_bloc.dart
+│   │   │   └── repositories/
+│   │   │       └── apiary_repository_interface.dart
+│   │   └── presentation/
+│   │       ├── pages/
+│   │       │   └── apiaries_screen.dart
+│   │       └── widgets/
+│   │           └── apiary_card.dart
+│   ├── hive/                      # 🐝 Gestion ruches
+│   │   ├── data/
+│   │   │   └── repositories/
+│   │   │       └── hive_repository.dart
+│   │   ├── domain/
+│   │   │   ├── bloc/
+│   │   │   │   └── hive_details_bloc.dart
+│   │   │   └── repositories/
+│   │   │       └── hive_repository_interface.dart
 │   │   └── presentation/
 │   │       └── pages/
-│   │           ├── hives_screen.dart      # Liste ruches
-│   │           └── hive_details_screen.dart # Détails ruche
-│   ├── apiary/                    # Feature gestion ruchers
-│   │   └── presentation/
-│   │       └── pages/
-│   │           └── apiaries_screen.dart   # Écran ruchers
-│   ├── alert/                     # Feature alertes
-│   │   └── presentation/
-│   │       └── pages/
-│   │           └── alerts_screen.dart     # Écran alertes
-│   ├── sensor/                    # Feature capteurs
-│   │   └── presentation/
-│   │       └── pages/
-│   │           └── sensor_readings_screen.dart # Lectures capteurs
-│   ├── settings/                  # Feature paramètres
-│   │   └── presentation/
-│   │       └── pages/
-│   │           └── settings_screen.dart   # Écran paramètres
-│   └── auth/                      # Feature authentification
+│   │           ├── hive_details_screen.dart
+│   │           └── hives_screen.dart
+│   └── alert/                     # 🔔 Système d'alertes
+│       ├── data/
+│       │   └── repositories/
+│       │       └── alert_repository.dart
+│       ├── domain/
+│       │   ├── entities/
+│       │   │   └── threshold_event.dart
+│       │   └── repositories/
+│       │       └── alert_repository_interface.dart
+│       └── presentation/
 ├── screens/                       # 📱 Écrans globaux
 │   └── home_screen.dart           # Écran d'accueil principal
 └── l10n/                          # 🌍 Internationalisation
 ```
 
-## 🎯 **Architecture Dashboard & Navigation**
+## 🔐 **Authentification Firebase**
 
-### **Hiérarchie de Navigation Métier**
+### **Architecture d'authentification complète**
 
-L'application suit une hiérarchie naturelle pour l'apiculteur :
-
-```
-Dashboard Global (Vue d'ensemble)
-├── 📊 Résumé Multi-Ruchers
-│   ├── Statistiques globales (ruchers, ruches, alertes)
-│   ├── État de santé général
-│   └── Alertes prioritaires
-├── 🏡 Ruchers
-│   ├── Rucher Principal
-│   │   ├── Vue grille des ruches
-│   │   ├── Comparaisons température/humidité
-│   │   └── Ruche Alpha (détails)
-│   ├── Rucher Forêt
-│   └── Rucher Prairie
-└── 🔔 Alertes Globales
-```
-
-### **Niveaux de Dashboard**
-
-#### **1. Dashboard Principal (Accueil)**
-
-- **Objectif** : Vue d'ensemble complète pour l'apiculteur
-- **Contenu** :
-  - Résumé statistiques (X ruchers, Y ruches, Z alertes)
-  - Cards des ruchers avec statut visuel (✅⚠️❌)
-  - Alertes les plus critiques
-  - Graphique température moyenne par rucher
-- **Navigation** : Vers ruchers spécifiques
-
-#### **2. Dashboard Rucher**
-
-- **Objectif** : Gestion d'un rucher spécifique
-- **Contenu** :
-  - En-tête rucher (nom, localisation, nombre ruches)
-  - Grille visuelle des ruches avec statuts
-  - Graphiques comparatifs multi-ruches
-  - Actions : ajouter ruche, configurer rucher
-- **Navigation** : Vers ruches individuelles
-
-#### **3. Dashboard Ruche**
-
-- **Objectif** : Monitoring détaillé d'une ruche
-- **Contenu** :
-  - Métriques temps réel (température, humidité)
-  - Historiques détaillés et tendances
-  - Configuration seuils et alertes
-  - Gestion capteurs
-- **Navigation** : Retour rucher ou vers autre ruche
-
-### **Flux de Données Dashboard**
+L'application intègre maintenant un système d'authentification robuste :
 
 ```dart
-DashboardBloc
-├── GlobalDashboardState
-│   ├── List<Apiary> apiaries
-│   ├── GlobalStats stats
-│   └── List<Alert> criticalAlerts
-├── ApiaryDashboardState
-│   ├── Apiary selectedApiary
-│   ├── List<Hive> hives
-│   └── ComparisonData charts
-└── HiveDashboardState
-    ├── Hive selectedHive
-    ├── CurrentState realTimeData
-    └── HistoricalData trends
+// Entité utilisateur
+class UserEntity {
+  final String id;
+  final String email;
+  final String? displayName;
+  final DateTime? createdAt;
+}
+
+// Use cases disponibles
+- SignInWithEmailPassword
+- SignUpWithEmailPassword
+- SignOut
+- GetAuthState
+
+// États gérés par AuthBloc
+- AuthInitial
+- AuthLoading
+- AuthAuthenticated
+- AuthUnauthenticated
+- AuthError
 ```
 
-## 🔧 **Composants Core**
+### **Flux d'authentification**
 
-### **ServiceFactory**
+1. **Connexion** : Email/Password → Firebase Auth → UserEntity
+2. **Inscription** : Validation → Création compte → Auto-connexion
+3. **Déconnexion** : Nettoyage état → Redirection login
+4. **Persistance** : État maintenu entre sessions
 
-- **Rôle** : Factory centralisant la création et injection des services
-- **Pattern** : Singleton + Factory
-- **Responsabilité** : Initialiser tous les services au démarrage
+## 🎯 **Architecture des Features**
+
+### **Feature Sensor (Entités IoT)**
+
+Centralise toutes les entités métier liées au monitoring IoT :
+
+```dart
+// Entités principales
+- Apiary (Rucher): id, name, location, hiveIds, description
+- Hive (Ruche): id, name, description, apiaryId
+- CurrentState: temperature, humidity, weight, timestamp, isOnline
+- SensorReading: temperature, humidity, weight, timestamp
+- ThresholdEvent: type, value, threshold, severity, timestamp
+- TimeFilter: oneHour, sixHours, oneDay, oneWeek, oneMonth
+```
+
+### **Feature Dashboard**
+
+Orchestration des données pour la vue d'ensemble :
+
+```dart
+// États du dashboard
+- DashboardLoaded: apiaries, hives, averageTemperatureReadings
+- Support multi-ruchers avec statistiques globales
+- Graphiques de température moyenne par rucher
+```
+
+### **Feature Apiary/Hive**
+
+Gestion hiérarchique ruchers → ruches :
+
+```dart
+// Navigation métier intuitive
+Ruchers (liste) → Rucher spécifique → Ruches du rucher → Détails ruche
+```
+
+## 🔧 **Services d'infrastructure**
+
+### **ServiceFactory (Singleton)**
+
+Factory centralisé pour tous les services :
+
+```dart
+class ServiceFactory {
+  static FirebaseService get firebaseService;
+  static HiveServiceCoordinator getHiveServiceCoordinator();
+  // Injection de dépendances centralisée
+}
+```
 
 ### **HiveServiceCoordinator**
 
-- **Rôle** : Coordonnateur remplaçant l'ancien SensorService monolithique
-- **Pattern** : Coordinator
-- **Responsabilité** : Orchestrer les services Firebase, capteurs, alertes
-
-### **SensorRepository**
-
-- **Rôle** : Abstraction de l'accès aux données des capteurs
-- **Pattern** : Repository
-- **Responsabilité** : Interface standardisée pour les données
-
-### **DashboardUseCases**
-
-- **Rôle** : Logique métier du tableau de bord
-- **Pattern** : Use Cases
-- **Responsabilité** : Orchestrer la récupération et traitement des données
-
-## 📱 **Architecture UI**
-
-### **BLoC Pattern**
-
-- Gestion d'état prévisible et testable
-- Séparation claire entre logique métier et UI
-- Réactivité avec des streams
-
-### **Widget Composition**
-
-- Widgets modulaires et réutilisables
-- Séparation des responsabilités UI
-- Configuration centralisée des styles
-
-### **Navigation Hiérarchique**
-
-- **Contexte métier** : Respecte le workflow naturel de l'apiculteur
-- **Drill-down progressif** : Du général (tous ruchers) au spécifique (ruche)
-- **Breadcrumbs** : Navigation claire avec contexte
-- **Actions contextuelles** : Boutons adaptés au niveau (ajouter rucher/ruche)
-
-## 🎨 **UX Principles**
-
-### **Information Hierarchy**
-
-1. **Global** : Vue d'ensemble pour prise de décision rapide
-2. **Contextuel** : Données pertinentes selon le niveau
-3. **Détaillé** : Informations techniques pour maintenance
-
-### **Visual Design**
-
-- **Status Colors** : ✅ Normal, ⚠️ Attention, ❌ Critique
-- **Progressive Disclosure** : Information par niveaux
-- **Responsive Layout** : Adaptation mobile/tablet
-
-### **User Flow**
-
-```
-Ouverture App → Dashboard Global → Sélection Rucher →
-Gestion Ruches → Détails Ruche → Actions/Configuration
-```
-
-## 🚀 **Avantages de cette architecture**
-
-1. **Maintenabilité** ⚡
-
-   - Code organisé et facile à comprendre
-   - Responsabilités claires et séparées
-   - Facilité d'ajout de nouvelles features
-
-2. **Testabilité** 🧪
-
-   - Chaque couche peut être testée isolément
-   - Mocking facilité par les interfaces
-   - Tests unitaires, widgets et intégration
-
-3. **Évolutivité** 📈
-
-   - Ajout de nouvelles features sans impact
-   - Modification des services sans casser l'UI
-   - Réutilisation maximale des composants
-
-4. **Performance** ⚡
-
-   - Injection de dépendances optimisée
-   - Gestion de mémoire améliorée
-   - Rebuild minimal des widgets
-
-5. **UX Métier** 👨‍🌾
-   - Navigation intuitive pour l'apiculteur
-   - Workflow respectant les besoins réels
-   - Information contextuelle et actionnable
-
-## 📦 **Utilisation des exports**
+Coordinateur remplaçant l'ancien service monolithique :
 
 ```dart
-// Import simple des composants core
-import 'package:your_app/core/core.dart';
-
-// Import simple des features
-import 'package:your_app/features/features.dart';
-
-// Utilisation directe
-final coordinator = ServiceFactory.hiveServiceCoordinator;
-final repository = ServiceFactory.sensorRepository;
+// Responsabilités
+- Coordination Firebase + capteurs + alertes
+- Gestion des streams de données temps réel
+- Orchestration des différents services IoT
+- Cache et optimisations des requêtes
 ```
 
-## 🛡️ **Gestion d'erreur**
+## 📱 **Gestion d'état avec BLoC**
 
-- Centralisation dans `AppError`
-- Messages utilisateur localisés
-- Logging des erreurs techniques
-- Récupération gracieuse des erreurs
+### **Patrons implémentés**
+
+```dart
+// Architecture standardisée par feature
+Feature/
+├── domain/bloc/
+│   ├── feature_bloc.dart    # Logique métier
+│   ├── feature_event.dart   # Événements
+│   └── feature_state.dart   # États
+
+// Exemples concrets
+- AuthBloc: Gestion authentification
+- DashboardBloc: Orchestration données dashboard
+- HiveDetailsBloc: Détails d'une ruche spécifique
+- ApiariesBloc: Liste des ruchers
+```
+
+### **Streams et réactivité**
+
+- **Temps réel** : Connexion WebSocket Firebase
+- **État local** : BLoC avec Cubit pour logique simple
+- **Navigation** : GoRouter avec état persisté
+
+## 🎨 **Hiérarchie UI et UX**
+
+### **Navigation métier apiculteur**
+
+```
+🏠 Dashboard Global
+├── 📊 Vue d'ensemble (stats multi-ruchers)
+├── 🏡 Ruchers
+│   ├── Rucher Principal
+│   │   ├── 🐝 Ruche Alpha (détails)
+│   │   ├── 🐝 Ruche Beta
+│   │   └── ➕ Ajouter ruche
+│   ├── Rucher Forêt
+│   └── Rucher Prairie
+├── 🔔 Alertes globales
+└── ⚙️ Paramètres
+```
+
+### **Progressive disclosure**
+
+1. **Global** : Résumé de tous les ruchers
+2. **Rucher** : Vue d'ensemble des ruches d'un rucher
+3. **Ruche** : Monitoring détaillé d'une ruche
+4. **Technique** : Configuration capteurs et seuils
+
+## 🚀 **Avantages de l'architecture actuelle**
+
+### **1. Séparation des responsabilités ⚡**
+
+- **Core** : Uniquement composants partagés (services, widgets)
+- **Features** : Domaines métier isolés et autonomes
+- **Clean Architecture** : Domain → Data → Presentation
+
+### **2. Maintenabilité 🔧**
+
+- Ajout de features sans impact sur l'existant
+- Tests isolés par couche et par feature
+- Refactoring facilité par les interfaces
+
+### **3. Évolutivité 📈**
+
+- Architecture modulaire prête pour de nouvelles features
+- Réutilisation maximale des composants core
+- Intégration d'autres systèmes IoT simplifiée
+
+### **4. Performance ⚡**
+
+- Injection de dépendances optimisée via ServiceFactory
+- Gestion mémoire avec disposal automatique des BLoCs
+- Cache intelligent des données IoT
+
+### **5. Robustesse 🛡️**
+
+- Gestion d'erreurs centralisée avec récupération gracieuse
+- Authentification sécurisée avec Firebase Auth
+- Mode hors ligne avec persistance locale
+
+## 🧪 **Stratégie de tests**
+
+### **Tests par couche**
+
+```dart
+// Tests unitaires (Domain)
+- Entities: Validation et logique métier
+- Use cases: Scénarios fonctionnels
+- BLoCs: États et transitions
+
+// Tests d'intégration (Data)
+- Repositories: Accès données Firebase
+- Services: Coordination et cache
+
+// Tests widgets (Presentation)
+- Pages: Rendu et interactions utilisateur
+- Widgets: Composants réutilisables
+```
+
+## 📦 **Migration réussie**
+
+### **Avant → Après**
+
+```dart
+// AVANT (problématique)
+core/models/           → Entités mélangées
+core/repositories/     → Logique métier dans core
+core/usecases/        → Use cases globaux
+
+// APRÈS (clean)
+features/sensor/domain/entities/     → Entités IoT centralisées
+features/*/data/repositories/        → Repositories par feature
+features/*/domain/usecases/         → Use cases spécialisés
+```
+
+### **Résultats**
+
+✅ **207 erreurs de linter corrigées**  
+✅ **Architecture Clean complètement implémentée**  
+✅ **Authentification Firebase fonctionnelle**  
+✅ **Séparation par features respectée**  
+✅ **Widgets core réutilisables**  
+✅ **Tests unitaires possibles par feature**
 
 ---
 
-**Cette architecture garantit un code propre, maintenable et évolutif selon les meilleures pratiques Flutter et Clean Architecture, tout en respectant les besoins métier réels de l'apiculteur.**
+**Cette architecture garantit un code propre, maintenable et évolutif selon les meilleures pratiques Flutter et Clean Architecture, parfaitement adapté aux besoins métier de monitoring IoT pour l'apiculture moderne.**

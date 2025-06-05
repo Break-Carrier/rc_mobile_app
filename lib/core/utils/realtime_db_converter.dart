@@ -1,90 +1,73 @@
-import 'dart:convert';
-import '../models/sensor_reading.dart';
-import '../models/current_state.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../features/sensor/domain/entities/sensor_reading.dart';
+import '../../features/sensor/domain/entities/current_state.dart';
 
-/// Utilitaires pour convertir les données de Realtime Database
+/// Convertisseur pour les données Firebase Realtime Database
 class RealtimeDBConverter {
-  /// Convertit les données JSON en CurrentState
-  static CurrentState currentStateFromJson(Map<String, dynamic> json) {
+  /// Convertit les données Firebase en CurrentState
+  static CurrentState? fromRealtimeDB(
+      Map<String, dynamic>? data, String hiveId) {
+    if (data == null) return null;
+
     return CurrentState(
-      temperature: (json['temperature'] as num).toDouble(),
-      humidity: (json['humidity'] as num).toDouble(),
-      timestamp: DateTime.fromMillisecondsSinceEpoch(json['lastUpdate'] as int),
-      thresholdHigh: (json['threshold_high'] as num?)?.toDouble() ?? 28.0,
-      thresholdLow: (json['threshold_low'] as num?)?.toDouble() ?? 15.0,
-      isOverThreshold: json['isThresholdExceeded'] as bool? ?? false,
-      metadata: {
-        'batteryLevel': json['batteryLevel'],
-      },
+      hiveId: hiveId,
+      temperature: (data['temperature'] as num?)?.toDouble(),
+      humidity: (data['humidity'] as num?)?.toDouble(),
+      weight: (data['weight'] as num?)?.toDouble(),
+      isOnline: data['is_online'] == true,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        data['timestamp'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+      ),
+      metadata: data['metadata'] as Map<String, dynamic>?,
     );
   }
 
-  /// Convertit les données JSON en liste de SensorReading
-  static List<SensorReading> sensorReadingsFromJson(Map<String, dynamic> json) {
+  /// Convertit une liste de données Firebase en SensorReadings
+  static List<SensorReading> sensorReadingsFromRealtimeDB(
+      Map<String, dynamic>? data, String hiveId) {
+    if (data == null) return [];
+
     final readings = <SensorReading>[];
-
-    json.forEach((key, value) {
-      if (value is Map<String, dynamic>) {
-        // Lecture de température
-        readings.add(SensorReading(
-          id: '${key}_temp',
-          sensorId: key,
-          type: 'temperature',
-          value: (value['temperature'] as num).toDouble(),
-          unit: '°C',
-          timestamp:
-              DateTime.fromMillisecondsSinceEpoch(value['timestamp'] as int),
-        ));
-
-        // Lecture d'humidité
-        readings.add(SensorReading(
-          id: '${key}_hum',
-          sensorId: key,
-          type: 'humidity',
-          value: (value['humidity'] as num).toDouble(),
-          unit: '%',
-          timestamp:
-              DateTime.fromMillisecondsSinceEpoch(value['timestamp'] as int),
-        ));
-      }
+    data.forEach((key, value) {
+      final readingData = Map<String, dynamic>.from(value as Map);
+      readings.add(SensorReading(
+        id: key,
+        hiveId: hiveId,
+        temperature: (readingData['temperature'] as num?)?.toDouble(),
+        humidity: (readingData['humidity'] as num?)?.toDouble(),
+        weight: (readingData['weight'] as num?)?.toDouble(),
+        timestamp: DateTime.fromMillisecondsSinceEpoch(
+          readingData['timestamp'] as int,
+        ),
+        metadata: readingData['metadata'] as Map<String, dynamic>?,
+      ));
     });
 
     return readings;
   }
 
-  /// Convertit les données JSON des événements de seuil
-  static List<Map<String, dynamic>> thresholdEventsFromJson(
-      Map<String, dynamic> json) {
-    final events = <Map<String, dynamic>>[];
-
-    json.forEach((key, value) {
-      if (value is Map<String, dynamic>) {
-        events.add({
-          'id': key,
-          'event': value['event'],
-          'temperature': (value['temperature'] as num).toDouble(),
-          'humidity': (value['humidity'] as num).toDouble(),
-          'threshold': (value['threshold'] as num).toDouble(),
-          'timestamp':
-              DateTime.fromMillisecondsSinceEpoch(value['timestamp'] as int),
-        });
-      }
-    });
-
-    return events;
+  /// Convertit une lecture de capteur pour l'envoi vers Firebase
+  static Map<String, dynamic> sensorReadingToRealtimeDB(SensorReading reading) {
+    return {
+      'hive_id': reading.hiveId,
+      'temperature': reading.temperature,
+      'humidity': reading.humidity,
+      'weight': reading.weight,
+      'timestamp': reading.timestamp.millisecondsSinceEpoch,
+      'metadata': reading.metadata,
+    };
   }
 
-  /// Parse une chaîne JSON en Map\<String, dynamic\>
-  static Map<String, dynamic> parseJsonString(String jsonString) {
-    try {
-      return json.decode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      throw FormatException('Invalid JSON string: $e');
-    }
-  }
-
-  /// Convertit un Map\<String, dynamic\> en chaîne JSON
-  static String toJsonString(Map<String, dynamic> data) {
-    return json.encode(data);
+  /// Convertit un état actuel pour l'envoi vers Firebase
+  static Map<String, dynamic> currentStateToRealtimeDB(CurrentState state) {
+    return {
+      'hive_id': state.hiveId,
+      'temperature': state.temperature,
+      'humidity': state.humidity,
+      'weight': state.weight,
+      'is_online': state.isOnline,
+      'timestamp': state.timestamp.millisecondsSinceEpoch,
+      'metadata': state.metadata,
+    };
   }
 }

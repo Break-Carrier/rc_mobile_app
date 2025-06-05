@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import '../../../../core/models/apiary.dart';
-import '../../../../core/models/hive.dart';
+import '../../../sensor/domain/entities/apiary.dart';
+import '../../../sensor/domain/entities/hive.dart';
 import '../../../../core/factories/service_factory.dart';
 import '../../domain/repositories/apiary_repository_interface.dart';
 

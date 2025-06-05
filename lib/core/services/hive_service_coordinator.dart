@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../models/current_state.dart';
-import '../models/sensor_reading.dart';
-import '../models/threshold_event.dart';
-import '../models/time_filter.dart';
-import '../models/apiary.dart';
-import '../models/hive.dart';
+import '../../features/sensor/domain/entities/current_state.dart';
+import '../../features/sensor/domain/entities/sensor_reading.dart';
+import '../../features/sensor/domain/entities/threshold_event.dart';
+import '../../features/sensor/domain/entities/time_filter.dart';
+import '../../features/sensor/domain/entities/apiary.dart';
+import '../../features/sensor/domain/entities/hive.dart';
 import '../factories/service_factory.dart';
 import '../config/app_config.dart';
 import '../error/app_error.dart';
@@ -26,7 +26,7 @@ class HiveServiceCoordinator {
 
   bool get isConnected => _firebaseService.isConnected;
 
-  HiveServiceCoordinator({
+  HiveServiceCoordinator._({
     required FirebaseService firebaseService,
     required CurrentStateService currentStateService,
     required SensorReadingService sensorReadingService,
@@ -35,6 +35,16 @@ class HiveServiceCoordinator {
         _currentStateService = currentStateService,
         _sensorReadingService = sensorReadingService,
         _thresholdEventService = thresholdEventService;
+
+  /// Factory method pour créer HiveServiceCoordinator avec ServiceFactory
+  static HiveServiceCoordinator create() {
+    return HiveServiceCoordinator._(
+      firebaseService: ServiceFactory.firebaseService,
+      currentStateService: ServiceFactory.currentStateService,
+      sensorReadingService: ServiceFactory.sensorReadingService,
+      thresholdEventService: ServiceFactory.thresholdEventService,
+    );
+  }
 
   /// Initialise le coordinateur
   Future<void> initialize() async {
@@ -212,7 +222,6 @@ class HiveServiceCoordinator {
         apiaryId: apiaryId,
         createdAt: now,
         updatedAt: now,
-        recentReadings: [],
       ),
       Hive(
         id: 'hive_2',
@@ -220,7 +229,6 @@ class HiveServiceCoordinator {
         apiaryId: apiaryId,
         createdAt: now,
         updatedAt: now,
-        recentReadings: [],
       ),
     ];
   }

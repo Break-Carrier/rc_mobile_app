@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
-import '../models/hive.dart';
-import '../models/apiary.dart';
-import '../models/current_state.dart';
-import '../models/sensor_reading.dart';
-import '../models/threshold_event.dart';
-import '../models/time_filter.dart';
-import '../services/hive_service_coordinator.dart';
-import 'sensor_repository.dart';
+import '../../domain/entities/hive.dart';
+import '../../domain/entities/apiary.dart';
+import '../../domain/entities/current_state.dart';
+import '../../domain/entities/sensor_reading.dart';
+import '../../domain/entities/threshold_event.dart';
+import '../../domain/entities/time_filter.dart';
+import '../../../../core/services/hive_service_coordinator.dart';
+import '../../domain/repositories/sensor_repository.dart';
 
 /// Implémentation concrète du repository utilisant HiveServiceCoordinator
 class SensorRepositoryImpl implements ISensorRepository {
@@ -17,7 +17,7 @@ class SensorRepositoryImpl implements ISensorRepository {
   @override
   Future<List<Apiary>> getApiaries() async {
     try {
-      return await _coordinator.getApiaries();
+      return _coordinator.getApiaries();
     } catch (e) {
       debugPrint('❌ Repository: Error getting apiaries: $e');
       return [];
@@ -27,7 +27,7 @@ class SensorRepositoryImpl implements ISensorRepository {
   @override
   Future<List<Hive>> getHivesForApiary(String apiaryId) async {
     try {
-      return await _coordinator.getHivesForApiary(apiaryId);
+      return _coordinator.getHivesForApiary(apiaryId);
     } catch (e) {
       debugPrint('❌ Repository: Error getting hives for apiary $apiaryId: $e');
       return [];

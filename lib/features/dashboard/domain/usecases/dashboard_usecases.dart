@@ -1,10 +1,10 @@
-import '../repositories/sensor_repository.dart';
-import '../models/hive.dart';
-import '../models/apiary.dart';
-import '../models/current_state.dart';
-import '../models/sensor_reading.dart';
-import '../models/threshold_event.dart';
-import '../models/time_filter.dart';
+import '../../../sensor/domain/repositories/sensor_repository.dart';
+import '../../../sensor/domain/entities/hive.dart';
+import '../../../sensor/domain/entities/apiary.dart';
+import '../../../sensor/domain/entities/current_state.dart';
+import '../../../sensor/domain/entities/sensor_reading.dart';
+import '../../../sensor/domain/entities/threshold_event.dart';
+import '../../../sensor/domain/entities/time_filter.dart';
 
 /// Cas d'utilisation pour initialiser le dashboard
 class InitializeDashboardUseCase {

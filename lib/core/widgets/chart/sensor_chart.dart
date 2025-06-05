@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
-import '../../models/sensor_reading.dart';
-import '../../models/time_filter.dart';
-import '../../../core/factories/service_factory.dart';
+import '../../../features/sensor/domain/entities/sensor_reading.dart';
+import '../../../features/sensor/domain/entities/time_filter.dart';
+import '../../factories/service_factory.dart';
 import '../../constants/mock_data.dart';
 import 'chart_header.dart';
 import 'chart_legend.dart';
@@ -33,6 +33,7 @@ class SensorChart extends StatefulWidget {
 class _SensorChartState extends State<SensorChart> {
   bool _showTemperature = true;
   bool _showHumidity = true;
+  TimeFilter _selectedFilter = TimeFilter.oneHour;
   late final coordinator = ServiceFactory.getHiveServiceCoordinator();
 
   @override
@@ -66,16 +67,12 @@ class _SensorChartState extends State<SensorChart> {
   }
 
   Widget _buildHeader() {
-    // Utiliser TimeFilter.oneHour comme valeur par défaut
-    const currentFilter = TimeFilter.oneHour;
-
     return ChartHeader(
-      title: widget.showAverageTemperature
-          ? 'Température moyenne du rucher'
-          : 'Évolution des capteurs',
-      currentFilter: currentFilter,
+      selectedFilter: _selectedFilter,
       onFilterChanged: (filter) {
-        // Pour l'instant, ne rien faire - à implémenter plus tard
+        setState(() {
+          _selectedFilter = filter;
+        });
       },
     );
   }
@@ -95,11 +92,9 @@ class _SensorChartState extends State<SensorChart> {
   }
 
   Widget _buildMockChart() {
-    const timeFilter = TimeFilter.oneHour;
-
-    final mockReadings = MockData.generateMockReadings(
-      hiveId: widget.hiveId ?? 'mock_hive_01',
-      timeRange: timeFilter.duration,
+    // Utiliser les données mockées du MockData
+    final mockReadings = MockData.getReadingsForHive(
+      widget.hiveId ?? 'hive_1',
     );
 
     return _buildChartWithData(mockReadings);
@@ -110,11 +105,9 @@ class _SensorChartState extends State<SensorChart> {
       return const ChartEmptyState();
     }
 
-    // Séparer les lectures par type
-    final tempReadings =
-        readings.where((r) => r.type == 'temperature').toList();
-    final humidityReadings =
-        readings.where((r) => r.type == 'humidity').toList();
+    // Séparer les lectures par type de données (temperature, humidity)
+    final tempReadings = readings.where((r) => r.temperature != null).toList();
+    final humidityReadings = readings.where((r) => r.humidity != null).toList();
 
     // Créer les données pour le graphique
     final List<LineChartBarData> lineBarsData = [];
@@ -167,10 +160,12 @@ class _SensorChartState extends State<SensorChart> {
 
   LineChartBarData _createTemperatureLine(List<SensorReading> readings) {
     return LineChartBarData(
-      spots: readings.map((reading) {
+      spots: readings
+          .where((reading) => reading.temperature != null)
+          .map((reading) {
         return FlSpot(
           reading.timestamp.millisecondsSinceEpoch.toDouble(),
-          reading.value,
+          reading.temperature!,
         );
       }).toList(),
       isCurved: true,
@@ -186,10 +181,11 @@ class _SensorChartState extends State<SensorChart> {
 
   LineChartBarData _createHumidityLine(List<SensorReading> readings) {
     return LineChartBarData(
-      spots: readings.map((reading) {
+      spots:
+          readings.where((reading) => reading.humidity != null).map((reading) {
         return FlSpot(
           reading.timestamp.millisecondsSinceEpoch.toDouble(),
-          reading.value,
+          reading.humidity!,
         );
       }).toList(),
       isCurved: true,

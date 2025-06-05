@@ -42,9 +42,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   void _startAuthStateListener() {
     _authStateSubscription = _getAuthState().listen((user) {
       if (user != null) {
-        emit(AuthAuthenticated(user: user));
+        add(AuthCheckRequested());
       } else {
-        emit(const AuthUnauthenticated());
+        add(AuthCheckRequested());
       }
     });
   }

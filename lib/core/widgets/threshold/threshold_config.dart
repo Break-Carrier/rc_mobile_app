@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/current_state.dart';
+import '../../../features/sensor/domain/entities/current_state.dart';
 import '../../factories/service_factory.dart';
 import 'threshold_states.dart';
 import 'threshold_display.dart';
@@ -76,7 +76,7 @@ class _ThresholdConfigState extends State<ThresholdConfig> {
 
         if (_isEditing) {
           return ThresholdEditor(
-            currentTemperature: state.temperature,
+            currentTemperature: state.temperature ?? 25.0,
             hysteresisMargin: 2.0,
             coordinator: coordinator,
             onCancel: () => setState(() => _isEditing = false),

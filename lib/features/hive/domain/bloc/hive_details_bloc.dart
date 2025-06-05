@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/models/current_state.dart';
-import '../../../../core/models/hive.dart';
+import '../../../sensor/domain/entities/current_state.dart';
+import '../../../sensor/domain/entities/hive.dart';
 import '../../data/repositories/hive_repository.dart';
 import '../repositories/hive_repository_interface.dart';
 

@@ -9,8 +9,7 @@ class AlertRepository implements IAlertRepository {
   final FirebaseService _firebaseService;
 
   AlertRepository({FirebaseService? firebaseService})
-      : _firebaseService =
-            firebaseService ?? ServiceFactory.getFirebaseService();
+      : _firebaseService = firebaseService ?? ServiceFactory.firebaseService;
 
   @override
   Future<List<ThresholdEvent>> getLatestAlerts({int limit = 20}) async {

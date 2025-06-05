@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/models/apiary.dart';
+import '../../../sensor/domain/entities/apiary.dart';
 
 class GlobalStatsCard extends StatelessWidget {
   final List<Apiary> apiaries;

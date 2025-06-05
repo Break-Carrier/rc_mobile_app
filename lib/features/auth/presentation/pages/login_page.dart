@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_bloc.dart';
-import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import '../widgets/auth_form.dart';
 
@@ -13,10 +12,10 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Authentification'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: const Text('Ruche Connectées'),
+        centerTitle: true,
       ),
-      body: BlocListener<AuthBloc, AuthState>(
+      body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -26,21 +25,26 @@ class LoginPage extends StatelessWidget {
               ),
             );
           } else if (state is AuthAuthenticated) {
-            // Navigation vers la page principale sera gérée par le routeur
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Connexion réussie !'),
-                backgroundColor: Colors.green,
-              ),
-            );
+            // Navigation vers le dashboard sera gérée par le router
+            Navigator.of(context).pushReplacementNamed('/dashboard');
           }
         },
-        child: const SafeArea(
-          child: Padding(
+        builder: (context, state) {
+          if (state is AuthLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          return const Padding(
             padding: EdgeInsets.all(16.0),
-            child: AuthForm(),
-          ),
-        ),
+            child: Center(
+              child: SingleChildScrollView(
+                child: AuthForm(),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

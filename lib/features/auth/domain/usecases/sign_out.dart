@@ -1,4 +1,3 @@
-import '../../../../core/error/auth_failures.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../repositories/auth_repository.dart';
 

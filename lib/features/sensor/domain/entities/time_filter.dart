@@ -1,4 +1,3 @@
-
 /// Énumération des filtres temporels disponibles
 enum TimeFilter {
   /// 30 dernières minutes

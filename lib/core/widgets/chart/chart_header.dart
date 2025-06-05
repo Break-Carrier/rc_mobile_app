@@ -1,71 +1,53 @@
 import 'package:flutter/material.dart';
-import '../../models/time_filter.dart';
+import '../../../features/sensor/domain/entities/time_filter.dart';
 
+/// En-tête du graphique avec sélecteur de filtre temporel
 class ChartHeader extends StatelessWidget {
-  final String title;
-  final TimeFilter currentFilter;
-  final Function(TimeFilter) onFilterChanged;
+  final TimeFilter selectedFilter;
+  final ValueChanged<TimeFilter> onFilterChanged;
 
   const ChartHeader({
     super.key,
-    required this.title,
-    required this.currentFilter,
+    required this.selectedFilter,
     required this.onFilterChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Flexible(
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-            overflow: TextOverflow.ellipsis,
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Données des capteurs',
+            style: Theme.of(context).textTheme.titleLarge,
           ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withAlpha(30),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Theme.of(context).primaryColor.withAlpha(50),
-              width: 1,
-            ),
+          Row(
+            children: [
+              Text(
+                'Période: ',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              DropdownButton<TimeFilter>(
+                value: selectedFilter,
+                onChanged: (TimeFilter? newValue) {
+                  if (newValue != null) {
+                    onFilterChanged(newValue);
+                  }
+                },
+                items: TimeFilter.values
+                    .map<DropdownMenuItem<TimeFilter>>((TimeFilter value) {
+                  return DropdownMenuItem<TimeFilter>(
+                    value: value,
+                    child: Text(value.displayName),
+                  );
+                }).toList(),
+              ),
+            ],
           ),
-          child: DropdownButton<TimeFilter>(
-            value: currentFilter,
-            onChanged: (TimeFilter? newValue) {
-              if (newValue != null) {
-                onFilterChanged(newValue);
-              }
-            },
-            icon: Icon(
-              Icons.arrow_drop_down,
-              color: Theme.of(context).primaryColor,
-            ),
-            underline: const SizedBox(),
-            borderRadius: BorderRadius.circular(10),
-            items: TimeFilter.values.map((TimeFilter filter) {
-              return DropdownMenuItem<TimeFilter>(
-                value: filter,
-                child: Text(
-                  filter.displayName,
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

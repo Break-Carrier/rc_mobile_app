@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/models/sensor_reading.dart';
-import '../../../../core/models/time_filter.dart';
+import '../../../sensor/domain/entities/sensor_reading.dart';
+import '../../../sensor/domain/entities/time_filter.dart';
 
 class AverageTemperatureChart extends StatelessWidget {
   final List<SensorReading> readings;
@@ -178,16 +178,15 @@ class AverageTemperatureChart extends StatelessWidget {
     double minY = double.infinity;
     double maxY = double.negativeInfinity;
 
-    final tempReadings =
-        readings.where((r) => r.type == 'temperature').toList();
+    // Filtrer les lectures qui ont une température non-nulle
+    final tempReadings = readings.where((r) => r.temperature != null).toList();
 
     if (tempReadings.isNotEmpty) {
-      final tempMin = tempReadings
-          .map((reading) => reading.value)
-          .reduce((a, b) => a < b ? a : b);
-      final tempMax = tempReadings
-          .map((reading) => reading.value)
-          .reduce((a, b) => a > b ? a : b);
+      final temperatures =
+          tempReadings.map((reading) => reading.temperature!).toList();
+
+      final tempMin = temperatures.reduce((a, b) => a < b ? a : b);
+      final tempMax = temperatures.reduce((a, b) => a > b ? a : b);
 
       minY = tempMin;
       maxY = tempMax;
@@ -254,7 +253,7 @@ class AverageTemperatureChart extends StatelessWidget {
             spots: tempReadings
                 .map((reading) => FlSpot(
                       reading.timestamp.millisecondsSinceEpoch.toDouble(),
-                      reading.value,
+                      reading.temperature!,
                     ))
                 .toList(),
             isCurved: true,

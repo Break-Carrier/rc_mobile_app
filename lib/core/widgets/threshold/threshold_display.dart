@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../models/current_state.dart';
+import '../../../features/sensor/domain/entities/current_state.dart';
 
 class ThresholdDisplay extends StatelessWidget {
   final CurrentState state;
   final double hysteresisMargin;
+
+  // Seuils par défaut - à terme, ces valeurs pourraient venir d'une configuration
+  static const double defaultThresholdHigh = 35.0;
+  static const double defaultThresholdLow = 10.0;
 
   const ThresholdDisplay({
     super.key,
@@ -107,14 +111,14 @@ class ThresholdDisplay extends StatelessWidget {
               icon: Icons.arrow_upward,
               color: Colors.red,
               label: 'Seuil haut',
-              value: '${state.thresholdHigh.toStringAsFixed(1)}°C',
+              value: '${defaultThresholdHigh.toStringAsFixed(1)}°C',
             ),
             const SizedBox(height: 16),
             _buildThresholdRow(
               icon: Icons.arrow_downward,
               color: Colors.blue,
               label: 'Seuil bas',
-              value: '${state.thresholdLow.toStringAsFixed(1)}°C',
+              value: '${defaultThresholdLow.toStringAsFixed(1)}°C',
             ),
             const SizedBox(height: 16),
             _buildThresholdRow(
@@ -123,9 +127,27 @@ class ThresholdDisplay extends StatelessWidget {
               label: 'Hystérésis',
               value: '±${hysteresisMargin.toStringAsFixed(1)}°C',
             ),
+            if (state.temperature != null) ...[
+              const SizedBox(height: 16),
+              _buildCurrentTemperatureRow(),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCurrentTemperatureRow() {
+    final temp = state.temperature!;
+    final isOverHigh = temp > defaultThresholdHigh;
+    final isUnderLow = temp < defaultThresholdLow;
+    final isAlert = isOverHigh || isUnderLow;
+
+    return _buildThresholdRow(
+      icon: Icons.thermostat,
+      color: isAlert ? Colors.orange : Colors.green,
+      label: 'Température actuelle',
+      value: '${temp.toStringAsFixed(1)}°C',
     );
   }
 

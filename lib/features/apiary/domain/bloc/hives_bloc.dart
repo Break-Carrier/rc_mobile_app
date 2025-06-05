@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/models/apiary.dart';
-import '../../../../core/models/hive.dart';
+import '../../../sensor/domain/entities/apiary.dart';
+import '../../../sensor/domain/entities/hive.dart';
 import '../../data/repositories/apiary_repository.dart';
 import '../repositories/apiary_repository_interface.dart';
 

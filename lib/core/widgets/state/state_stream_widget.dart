@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/current_state.dart';
+import '../../../features/sensor/domain/entities/current_state.dart';
 import '../../factories/service_factory.dart';
 import '../../error/app_error.dart';
 import '../../../core/config/app_config.dart';

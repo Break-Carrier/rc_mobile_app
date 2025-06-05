@@ -1,236 +1,401 @@
-# IoT Monitoring App
+# 🐝 Ruche Connectée - IoT Monitoring App
 
-1. Introduction/Présentation du projet
-2. Fonctionnalités principales
-3. Architecture technique
-4. Installation et configuration
-5. Structure du projet
-6. Utilisation
-7. Modèles de données
-8. Services
-9. Widgets principaux
-10. Contribution
-11. Licence
+Application Flutter de monitoring IoT pour ruches d'abeilles avec architecture Clean Code et authentification Firebase.
 
-## Présentation
+## 📋 Table des matières
 
-Cette application Flutter permet de surveiller et configurer un système IoT connecté (DHT11) en temps réel. Elle se connecte à une base de données Firebase Realtime Database pour afficher les données de température et d'humidité, visualiser leur évolution sur le temps, et configurer des seuils d'alerte avec hystérésis.
+1. [Présentation du projet](#présentation)
+2. [Fonctionnalités principales](#fonctionnalités-principales)
+3. [Architecture technique](#architecture-technique)
+4. [Installation et configuration](#installation-et-configuration)
+5. [Structure du projet](#structure-du-projet)
+6. [Authentification](#authentification)
+7. [Entités métier](#entités-métier)
+8. [Services et coordinateurs](#services-et-coordinateurs)
+9. [Interface utilisateur](#interface-utilisateur)
+10. [Tests et qualité](#tests-et-qualité)
+11. [Contribution](#contribution)
+12. [Licence](#licence)
 
-## Fonctionnalités principales
+## 🎯 Présentation
 
-- **Visualisation de l'état actuel** : Température et humidité en temps réel
-- **Graphique d'évolution** : Visualisation des données de capteurs sur différentes périodes
-- **Configuration des seuils** : Paramétrage des limites de température avec hystérésis
-- **Historique des alertes** : Liste des événements de dépassement de seuil avec pagination
-- **Mode hors ligne** : Persistance des données grâce à Firebase
-- **Actualisation automatique** : Mise à jour des données en temps réel
+**Ruche Connectée** est une application Flutter moderne permettant aux apiculteurs de surveiller et gérer leurs ruches connectées en temps réel. L'application suit une **architecture Clean Code** avec séparation par features et intègre un système d'authentification Firebase complet.
 
-## Architecture technique
+### 🎨 Fonctionnalités métier
 
-L'application est construite sur l'architecture suivante :
+- **Dashboard multi-ruchers** - Vue d'ensemble de tous les ruchers
+- **Monitoring temps réel** - Surveillance des capteurs IoT (température, humidité, poids)
+- **Gestion hiérarchique** - Ruchers → Ruches → Capteurs
+- **Système d'alertes** - Notifications automatiques sur dépassement de seuils
+- **Historiques et tendances** - Analyse des données dans le temps
+- **Interface intuitive** - Navigation pensée pour le métier d'apiculteur
 
-- **Frontend** : Flutter (Material Design 3)
-- **Backend** : Firebase Realtime Database
-- **État** : Gestion avec Provider
-- **Graphiques** : fl_chart pour la visualisation des données
-- **Modèle de données** : Modèles spécifiques pour chaque type de données
+## ✨ Fonctionnalités principales
 
-## Installation
+### 🔐 **Authentification sécurisée**
+
+- Connexion/inscription avec Firebase Auth
+- Gestion des sessions utilisateur
+- Validation des formulaires
+- Récupération de mot de passe
+
+### 📊 **Dashboard intelligent**
+
+- Vue d'ensemble multi-ruchers avec statistiques globales
+- Cartes de statut visuelles (✅⚠️❌)
+- Graphiques de température moyenne par rucher
+- Alertes critiques prioritaires
+
+### 🏡 **Gestion des ruchers**
+
+- Liste des ruchers avec informations détaillées
+- Navigation vers les ruches d'un rucher spécifique
+- Ajout et configuration de nouveaux ruchers
+
+### 🐝 **Monitoring des ruches**
+
+- État actuel en temps réel (température, humidité, poids)
+- Détails individuels par ruche
+- Historique des lectures de capteurs
+- Configuration des seuils d'alerte
+
+### 🔔 **Système d'alertes**
+
+- Événements de dépassement de seuil automatiques
+- Historique des alertes avec pagination
+- Configuration des seuils avec hystérésis
+- Notifications en temps réel
+
+### 📈 **Visualisations et analyses**
+
+- Graphiques d'évolution des données
+- Filtres temporels multiples (1h, 6h, 1j, 1s, 1m)
+- Comparaisons entre ruches
+- Export des données historiques
+
+## 🏗️ Architecture technique
+
+### **Clean Architecture avec Features**
+
+L'application est construite sur les principes du **Clean Architecture** :
+
+```
+🏗️ Architecture par couches
+├── 🎯 Domain Layer    # Logique métier pure (entities, repositories, use cases)
+├── 📦 Data Layer      # Accès aux données (models, repositories, datasources)
+└── 🎨 Presentation    # Interface utilisateur (pages, widgets, BLoCs)
+
+🚀 Organisation par Features
+├── 🔐 auth/          # Authentification Firebase
+├── 🌡️ sensor/        # Entités IoT (ruchers, ruches, capteurs)
+├── 📊 dashboard/     # Tableau de bord multi-ruchers
+├── 🏡 apiary/        # Gestion des ruchers
+├── 🐝 hive/          # Gestion des ruches
+└── 🔔 alert/         # Système d'alertes
+```
+
+### **Stack technique**
+
+- **Frontend** : Flutter 3.x avec Material Design 3
+- **Backend** : Firebase Realtime Database + Firebase Auth
+- **Architecture** : Clean Architecture + BLoC Pattern
+- **State Management** : BLoC/Cubit avec équate
+- **Charts** : fl_chart pour visualisations
+- **Navigation** : GoRouter avec routes typées
+- **Injection** : ServiceFactory pattern
+
+## 🚀 Installation et configuration
 
 ### Prérequis
 
-- Flutter SDK (^3.6.0)
-- Compte Firebase
-- Android Studio / VS Code
+- Flutter SDK 3.x ou supérieur
+- Dart SDK 3.x ou supérieur
+- Compte Firebase avec projet configuré
+- Android Studio / VS Code avec extensions Flutter
 
 ### Configuration
 
-1. **Clonez le dépôt**
+1. **Cloner le repository**
 
    ```bash
-   git clone https://github.com/username/IoT_Flutter_Firebase.git
-   cd IoT_Flutter_Firebase
+   git clone https://github.com/username/rc_mobile_app.git
+   cd rc_mobile_app
    ```
 
-2. **Installez les dépendances**
+2. **Installer les dépendances**
 
    ```bash
    flutter pub get
    ```
 
-3. **Configurez Firebase**
+3. **Configurer Firebase**
 
-   Ajoutez votre fichier `firebase_options.dart` à la racine du projet avec les informations suivantes :
-   - apiKey
-   - databaseURL
-   - Les autres informations requises par FirebaseOptions
+   Assurez-vous que `firebase_options.dart` contient :
 
-4. **Lancez l'application**
+   ```dart
+   static const FirebaseOptions android = FirebaseOptions(
+     apiKey: 'your-api-key',
+     appId: 'your-app-id',
+     messagingSenderId: 'your-sender-id',
+     projectId: 'your-project-id',
+     databaseURL: 'your-database-url',
+   );
+   ```
 
+4. **Lancer l'application**
    ```bash
    flutter run
    ```
 
-## Structure du projet
+## 📁 Structure du projet
 
 ```
 lib/
-  ├── main.dart              # Point d'entrée de l'application
-  ├── firebase_options.dart  # Configuration Firebase
-  ├── models/                # Modèles de données
-  │    ├── current_state.dart
-  │    ├── sensor_reading.dart
-  │    ├── threshold_event.dart
-  │    └── time_filter.dart
-  ├── services/              # Services pour la logique métier
-  │    ├── firebase_service.dart
-  │    ├── sensor_service.dart
-  │    ├── current_state_service.dart
-  │    ├── sensor_reading_service.dart
-  │    └── threshold_event_service.dart
-  ├── utils/                 # Utilitaires
-  │    └── map_converter.dart
-  ├── screens/               # Écrans principaux
-  │    └── home_screen.dart
-  └── widgets/               # Widgets réutilisables
-       ├── current_state_widget.dart
-       ├── sensor_readings_chart.dart
-       ├── threshold_events_widget.dart
-       └── threshold_config_widget.dart
+├── main.dart                          # Point d'entrée
+├── firebase_options.dart              # Configuration Firebase
+├── core/                              # 🔧 Composants partagés
+│   ├── config/app_config.dart         # Configuration globale
+│   ├── error/                         # Gestion d'erreurs
+│   ├── extensions/                    # Extensions Dart
+│   ├── factories/service_factory.dart # Injection de dépendances
+│   ├── services/                      # Services d'infrastructure
+│   └── widgets/                       # Composants UI réutilisables
+├── features/                          # 📱 Features métier
+│   ├── auth/                          # 🔐 Authentification
+│   │   ├── domain/                    # Logique métier auth
+│   │   ├── data/                      # Accès données Firebase Auth
+│   │   └── presentation/              # UI auth (login, signup)
+│   ├── sensor/                        # 🌡️ Entités IoT
+│   │   └── domain/entities/           # Ruchers, ruches, capteurs
+│   ├── dashboard/                     # 📊 Tableau de bord
+│   ├── apiary/                        # 🏡 Gestion ruchers
+│   ├── hive/                          # 🐝 Gestion ruches
+│   └── alert/                         # 🔔 Système alertes
+├── screens/                           # 📱 Écrans globaux
+└── l10n/                              # 🌍 Localisation
 ```
 
-## Utilisation
+## 🔐 Authentification
 
-### Écran principal
+### Architecture d'authentification
 
-L'application affiche un écran principal avec plusieurs sections :
+```dart
+// Use Cases disponibles
+- SignInWithEmailPassword     # Connexion utilisateur
+- SignUpWithEmailPassword     # Inscription utilisateur
+- SignOut                     # Déconnexion
+- GetAuthState               # État d'authentification
 
-1. **État actuel** : Affiche la température et l'humidité actuelles avec des codes couleur selon les seuils
-2. **Configuration des seuils** : Permet d'ajuster les seuils d'alerte de température
-3. **Graphique d'évolution** : Visualise l'évolution des données avec plusieurs filtres temporels
-4. **Liste des événements** : Affiche l'historique des dépassements de seuil
+// États BLoC
+- AuthInitial               # État initial
+- AuthLoading              # Chargement en cours
+- AuthAuthenticated        # Utilisateur connecté
+- AuthUnauthenticated      # Utilisateur non connecté
+- AuthError                # Erreur d'authentification
+```
 
-### Configuration des seuils
+### Flux d'authentification
 
-La fonctionnalité de configuration des seuils permet de définir une température cible avec hystérésis :
+1. **Ouverture app** → Vérification état auth → Dashboard ou Login
+2. **Connexion** → Validation → Firebase Auth → Redirection Dashboard
+3. **Inscription** → Validation → Création compte → Auto-connexion
+4. **Session** → Persistance automatique → Reconnexion
 
-- Activez le mode édition avec le switch
-- Utilisez le curseur pour régler la température cible
-- Les seuils haut (+1°C) et bas (-1°C) sont calculés automatiquement
-- Validez les modifications avec le bouton "Enregistrer"
+## 🌡️ Entités métier
 
-## Modèles de données
+### Modèle de données IoT
 
-### CurrentState
+```dart
+// Rucher (Apiary)
+class Apiary {
+  String id;                    # Identifiant unique
+  String name;                  # Nom du rucher
+  String location;              # Localisation GPS
+  List<String> hiveIds;         # IDs des ruches
+  String? description;          # Description optionnelle
+}
 
-Représente l'état actuel des capteurs :
+// Ruche (Hive)
+class Hive {
+  String id;                    # Identifiant unique
+  String name;                  # Nom de la ruche
+  String apiaryId;              # Rucher parent
+  String? description;          # Description optionnelle
+}
 
-- `temperature` : Température actuelle (°C)
-- `humidity` : Humidité actuelle (%)
-- `thresholdLow` : Seuil bas de température
-- `thresholdHigh` : Seuil haut de température
-- `lastUpdate` : Date de dernière mise à jour
-- `isOverThreshold` : Indique si la température dépasse les seuils
+// État actuel (CurrentState)
+class CurrentState {
+  double? temperature;          # Température actuelle (°C)
+  double? humidity;             # Humidité actuelle (%)
+  double? weight;               # Poids actuel (kg)
+  DateTime timestamp;           # Timestamp de la mesure
+  bool isOnline;               # État de connectivité
+}
 
-### SensorReading
+// Lecture capteur (SensorReading)
+class SensorReading {
+  double? temperature;          # Température (°C)
+  double? humidity;             # Humidité (%)
+  double? weight;               # Poids (kg)
+  DateTime timestamp;           # Moment de la lecture
+}
 
-Représente une lecture de capteur historique :
+// Événement de seuil (ThresholdEvent)
+class ThresholdEvent {
+  String type;                  # Type d'événement
+  double value;                 # Valeur déclenchante
+  double threshold;             # Seuil configuré
+  String severity;              # Sévérité (low, medium, high)
+  DateTime timestamp;           # Moment de l'événement
+  bool isResolved;             # Événement résolu
+}
+```
 
-- `temperature` : Température relevée (°C)
-- `humidity` : Humidité relevée (%)
-- `timestamp` : Date et heure de la mesure
+## 🔧 Services et coordinateurs
 
-### ThresholdEvent
+### ServiceFactory
 
-Représente un événement de dépassement de seuil :
+Pattern centralisé pour l'injection de dépendances :
 
-- `temperature` : Température lors de l'événement (°C)
-- `humidity` : Humidité lors de l'événement (%)
-- `timestamp` : Date et heure de l'événement
-- `eventType` : Type d'événement (dépassement, retour à la normale)
-- `thresholdHigh` : Seuil haut au moment de l'événement
-- `thresholdLow` : Seuil bas au moment de l'événement
+```dart
+class ServiceFactory {
+  // Service Firebase global
+  static FirebaseService get firebaseService;
 
-## Services
+  // Coordinateur IoT principal
+  static HiveServiceCoordinator getHiveServiceCoordinator();
+}
+```
 
-### FirebaseService
+### HiveServiceCoordinator
 
-Service de base pour la communication avec Firebase Realtime Database :
+Coordinateur principal remplaçant l'ancien service monolithique :
 
-- Initialisation de la connexion
-- Méthodes CRUD pour les données
-- Gestion des streams de données
-- Vérification de connectivité
-- Conversion sécurisée des types de données
+```dart
+class HiveServiceCoordinator {
+  // Gestion des ruchers et ruches
+  Future<List<Apiary>> getApiaries();
+  Future<List<Hive>> getHivesForApiary(String apiaryId);
 
-### SensorService
+  // Données temps réel
+  Stream<CurrentState?> getCurrentStateStream();
+  Stream<List<SensorReading>> getSensorReadingsStream();
+  Stream<List<ThresholdEvent>> getThresholdEventsStream();
 
-Service principal qui coordonne tous les services de capteurs :
+  // Configuration
+  void setActiveHive(String hiveId);
+  void setTimeFilter(TimeFilter filter);
+  Future<void> updateThresholds(double low, double high);
+}
+```
 
-- Initialisation des services spécialisés
-- Gestion de l'état de l'application
-- Interface unifiée pour l'accès aux données
-- Méthodes pour la mise à jour des seuils et la création d'événements
+## 🎨 Interface utilisateur
 
-### CurrentStateService
+### Navigation hiérarchique métier
 
-Gère l'état actuel des capteurs :
+```
+🏠 Dashboard Global
+├── 📊 Statistiques multi-ruchers
+├── 🏡 Mes Ruchers
+│   ├── Rucher Principal
+│   │   ├── 🐝 Ruche Alpha → Détails
+│   │   ├── 🐝 Ruche Beta → Détails
+│   │   └── ➕ Ajouter ruche
+│   ├── Rucher Forêt
+│   └── Rucher Prairie
+├── 🔔 Alertes globales
+└── ⚙️ Paramètres
+```
 
-- Récupération et mise à jour de l'état
-- Configuration des seuils de température
-- Surveillance des dépassements de seuil
+### Progressive disclosure
 
-### SensorReadingService
+1. **Global** - Vue d'ensemble de tous les ruchers
+2. **Rucher** - Ruches d'un rucher spécifique
+3. **Ruche** - Monitoring détaillé d'une ruche
+4. **Technique** - Configuration capteurs et seuils
 
-Gère les lectures de capteurs historiques :
+### Widgets core réutilisables
 
-- Récupération des données selon différents filtres temporels
-- Traitement et filtrage des lectures
+- `StateDisplayCard` - Affichage état actuel d'une ruche
+- `StateStreamWidget` - Widget de stream temps réel
+- `SensorChart` - Graphiques de données capteurs
+- `ThresholdConfig` - Configuration des seuils
+- `ThresholdEvents` - Liste des événements d'alerte
 
-### ThresholdEventService
+## 🧪 Tests et qualité
 
-Gère les événements de dépassement de seuil :
+### Stratégie de tests
 
-- Création et récupération des événements
-- Notification de nouveaux événements
+```dart
+// Tests unitaires (Domain)
+- Entities: Logique métier et validation
+- Use Cases: Scénarios fonctionnels
+- BLoCs: États et transitions
 
-## Gestion de l'hystérésis
+// Tests d'intégration (Data)
+- Repositories: Accès Firebase
+- Services: Coordination et cache
 
-Le système utilise un mécanisme d'hystérésis pour éviter les oscillations rapides entre les états :
+// Tests widgets (Presentation)
+- Pages: Rendu et interactions
+- Widgets: Composants réutilisables
+```
 
-1. L'utilisateur définit une température cible (par exemple 23°C)
-2. Le système applique automatiquement une marge d'hystérésis (±1°C)
-3. Le seuil haut est fixé à 24°C et le seuil bas à 22°C
-4. Un événement de dépassement est créé uniquement lorsque :
-   - La température passe au-dessus du seuil haut (>24°C)
-   - La température passe en-dessous du seuil bas (<22°C)
-5. Le statut revient à la normale uniquement lorsque la température revient dans la plage acceptable
+### Métriques qualité
 
-Cette approche évite les faux positifs et les alertes intempestives lors de petites fluctuations de température.
+- ✅ **0 erreur linter** - Code conforme aux standards
+- ✅ **Architecture Clean** - Couches respectées
+- ✅ **Couverture tests** - Logique métier testée
+- ✅ **Documentation** - Code auto-documenté
 
-## Optimisations et robustesse
+## 🚀 Utilisation
 
-L'application intègre plusieurs optimisations :
+### Premiers pas
 
-- Conversion sécurisée des types de données Firebase
-- Gestion des erreurs et de la connectivité
-- Cache des données pour le mode hors ligne
-- Rafraîchissement intelligent des données
-- Logs détaillés pour le débogage
+1. **Connexion** - Créez un compte ou connectez-vous
+2. **Dashboard** - Consultez la vue d'ensemble de vos ruchers
+3. **Navigation** - Explorez ruchers → ruches → détails
+4. **Configuration** - Paramétrez les seuils d'alerte
+5. **Monitoring** - Surveillez vos ruches en temps réel
 
-## Améliorations possibles
+### Fonctionnalités avancées
 
-- Ajout d'authentification utilisateur
-- Notifications push pour les dépassements de seuil
-- Support d'autres types de capteurs
-- Exportation des données historiques
-- Interface d'administration avancée
+- **Filtres temporels** - Analysez les données sur différentes périodes
+- **Comparaisons** - Comparez les performances entre ruches
+- **Exportation** - Exportez les données pour analyse externe
+- **Notifications** - Recevez des alertes en temps réel
 
-## Licence
+## 🤝 Contribution
 
-Ce projet est distribué sous licence MIT. Voir le fichier LICENSE pour plus d'informations.
+### Guidelines de développement
+
+1. **Architecture** - Respectez les couches Clean Architecture
+2. **Features** - Organisez par domaines métier
+3. **Tests** - Testez la logique métier
+4. **Documentation** - Documentez les API publiques
+5. **Qualité** - Zéro erreur linter accepté
+
+### Workflow de contribution
+
+1. Fork du projet
+2. Branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
+3. Commit (`git commit -m 'Ajout nouvelle fonctionnalité'`)
+4. Push (`git push origin feature/nouvelle-fonctionnalite`)
+5. Pull Request avec description détaillée
+
+## 📄 Licence
+
+Ce projet est distribué sous licence MIT. Voir le fichier `LICENSE` pour plus d'informations.
 
 ---
 
-Développé avec ❤️ par Yunaluman THERESE
+## 🏆 Statut du projet
 
+✅ **Architecture Clean complète** - Domain/Data/Presentation respectées  
+✅ **Firebase Auth fonctionnel** - Authentification robuste  
+✅ **Monitoring IoT opérationnel** - Capteurs temps réel  
+✅ **Interface moderne** - Material Design 3  
+✅ **Code quality** - 0 erreur linter, tests possibles  
+✅ **Prêt production** - Architecture évolutive et maintenable
+
+**Développé avec ❤️ pour les apiculteurs modernes**

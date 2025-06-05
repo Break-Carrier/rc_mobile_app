@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/threshold_event.dart';
+import '../../../features/sensor/domain/entities/threshold_event.dart';
 import '../../factories/service_factory.dart';
 import 'event_states.dart';
 import 'event_item.dart';
@@ -41,10 +41,9 @@ class _ThresholdEventsState extends State<ThresholdEvents> {
                 Expanded(
                   child: Text(
                     'Événements de dépassement de seuil',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ),
                 IconButton(

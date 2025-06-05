@@ -25,6 +25,8 @@ class AppConfig {
   // Firebase
   static const Duration firebaseTimeout = Duration(seconds: 30);
   static const int maxRetries = 3;
+  static const String firebaseBasePath =
+      'beehive_monitoring'; // Chemin racine dans Firebase
 
   // UI
   static const Duration animationDuration = Duration(milliseconds: 300);

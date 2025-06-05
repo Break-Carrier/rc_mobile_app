@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../../../core/error/auth_failures.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../entities/user_entity.dart';
 import '../repositories/auth_repository.dart';

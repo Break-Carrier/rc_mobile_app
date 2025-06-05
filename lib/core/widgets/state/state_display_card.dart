@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/current_state.dart';
+import '../../../features/sensor/domain/entities/current_state.dart';
 import '../../extensions/datetime_extensions.dart';
 import '../../extensions/double_extensions.dart';
 import '../../config/app_config.dart';
@@ -27,14 +27,28 @@ class StateDisplayCard extends StatelessWidget {
             _buildHeader(context),
             const SizedBox(height: 16),
             if (state != null) ...[
-              _TemperatureTile(
-                temperature: state!.temperature,
-                timestamp: state!.timestamp,
-                isOverThreshold: state!.isOverThreshold,
-              ),
+              if (state!.temperature != null)
+                _TemperatureTile(
+                  temperature: state!.temperature!,
+                  timestamp: state!.timestamp,
+                ),
+              if (state!.temperature != null && state!.humidity != null)
+                const SizedBox(height: 8),
+              if (state!.humidity != null)
+                _HumidityTile(
+                  humidity: state!.humidity!,
+                  timestamp: state!.timestamp,
+                ),
+              if (state!.weight != null) ...[
+                const SizedBox(height: 8),
+                _WeightTile(
+                  weight: state!.weight!,
+                  timestamp: state!.timestamp,
+                ),
+              ],
               const SizedBox(height: 8),
-              _HumidityTile(
-                humidity: state!.humidity,
+              _StatusTile(
+                isOnline: state!.isOnline,
                 timestamp: state!.timestamp,
               ),
             ] else
@@ -73,16 +87,15 @@ class StateDisplayCard extends StatelessWidget {
 class _TemperatureTile extends StatelessWidget {
   final double temperature;
   final DateTime timestamp;
-  final bool isOverThreshold;
 
   const _TemperatureTile({
     required this.temperature,
     required this.timestamp,
-    required this.isOverThreshold,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isOverThreshold = temperature > 35.0; // Seuil par défaut
     return _StateTile(
       icon: Icons.thermostat,
       label: 'Température',
@@ -113,6 +126,52 @@ class _HumidityTile extends StatelessWidget {
       timestamp: timestamp,
       isAlert: !humidity.isNormalHumidity,
       status: humidity.isNormalHumidity ? 'Normal' : 'Attention',
+    );
+  }
+}
+
+/// Tile pour afficher le poids
+class _WeightTile extends StatelessWidget {
+  final double weight;
+  final DateTime timestamp;
+
+  const _WeightTile({
+    required this.weight,
+    required this.timestamp,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _StateTile(
+      icon: Icons.monitor_weight,
+      label: 'Poids',
+      value: '${weight.toStringAsFixed(1)} kg',
+      timestamp: timestamp,
+      isAlert: false,
+      status: 'Normal',
+    );
+  }
+}
+
+/// Tile pour afficher le statut de connexion
+class _StatusTile extends StatelessWidget {
+  final bool isOnline;
+  final DateTime timestamp;
+
+  const _StatusTile({
+    required this.isOnline,
+    required this.timestamp,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _StateTile(
+      icon: isOnline ? Icons.wifi : Icons.wifi_off,
+      label: 'Statut',
+      value: isOnline ? 'En ligne' : 'Hors ligne',
+      timestamp: timestamp,
+      isAlert: !isOnline,
+      status: isOnline ? 'Connecté' : 'Déconnecté',
     );
   }
 }

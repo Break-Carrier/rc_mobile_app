@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
-import '../../../../core/models/hive.dart';
-import '../../../../core/models/current_state.dart';
-import '../../../../core/models/sensor_reading.dart';
-import '../../../../core/models/threshold_event.dart';
-import '../../../../core/models/time_filter.dart';
+import '../../../sensor/domain/entities/hive.dart';
+import '../../../sensor/domain/entities/current_state.dart';
+import '../../../sensor/domain/entities/sensor_reading.dart';
+import '../../../sensor/domain/entities/threshold_event.dart';
+import '../../../sensor/domain/entities/time_filter.dart';
 import '../../../../core/factories/service_factory.dart';
 import '../../domain/repositories/hive_repository_interface.dart';
 

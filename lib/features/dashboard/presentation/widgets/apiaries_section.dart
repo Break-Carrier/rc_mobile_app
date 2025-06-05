@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/models/apiary.dart';
+import '../../../sensor/domain/entities/apiary.dart';
 import '../../../../core/models/apiary_status.dart';
 
 class ApiariesSection extends StatelessWidget {

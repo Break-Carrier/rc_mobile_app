@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/models/apiary.dart';
+import '../../../sensor/domain/entities/apiary.dart';
 import '../../../../core/models/apiary_status.dart';
 
 class ApiaryOverviewCard extends StatelessWidget {

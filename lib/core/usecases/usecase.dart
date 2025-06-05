@@ -22,3 +22,4 @@ abstract class VoidUseCase0 {
 class NoParams {
   const NoParams();
 }
+ 

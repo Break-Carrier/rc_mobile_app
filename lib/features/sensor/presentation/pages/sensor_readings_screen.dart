@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/models/sensor_reading.dart';
-import '../../../../core/models/time_filter.dart';
+import '../../../sensor/domain/entities/sensor_reading.dart';
+import '../../../sensor/domain/entities/time_filter.dart';
 import '../../../../core/factories/service_factory.dart';
 
 class SensorReadingsScreen extends StatefulWidget {
@@ -89,13 +89,8 @@ class _SensorReadingsScreenState extends State<SensorReadingsScreen> {
 
                 // Trouver les valeurs actuelles
                 final latestReading = readings.first;
-                final temperature = latestReading.value;
-                final humidity = readings
-                    .firstWhere(
-                      (reading) => reading.type == 'humidity',
-                      orElse: () => latestReading,
-                    )
-                    .value;
+                final temperature = latestReading.temperature ?? 0.0;
+                final humidity = latestReading.humidity ?? 0.0;
 
                 return Column(
                   children: [

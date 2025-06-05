@@ -5,8 +5,8 @@ import '../core/widgets/events/threshold_events.dart';
 import '../core/widgets/state/state_stream_widget.dart';
 import '../core/widgets/threshold/threshold_config.dart';
 import '../core/factories/service_factory.dart';
-import '../core/models/hive.dart';
-import '../core/models/apiary.dart';
+import '../features/sensor/domain/entities/hive.dart';
+import '../features/sensor/domain/entities/apiary.dart';
 import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {

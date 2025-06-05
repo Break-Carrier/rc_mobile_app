@@ -1,15 +1,14 @@
 import 'package:flutter/foundation.dart';
-import '../../../../core/models/sensor_reading.dart';
+import '../../../sensor/domain/entities/sensor_reading.dart';
 import '../../../../core/factories/service_factory.dart';
-import '../../../../core/models/time_filter.dart';
+import '../../../sensor/domain/entities/time_filter.dart';
 
 class DashboardRepository {
   final FirebaseService _firebaseService;
   final coordinator = ServiceFactory.getHiveServiceCoordinator();
 
   DashboardRepository({FirebaseService? firebaseService})
-      : _firebaseService =
-            firebaseService ?? ServiceFactory.getFirebaseService();
+      : _firebaseService = firebaseService ?? ServiceFactory.firebaseService;
 
   /// Récupère la température moyenne pour toutes les ruches d'un rucher
   Future<List<SensorReading>> getAverageTemperatureForApiary(

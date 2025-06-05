@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/models/hive.dart';
-import '../../../../core/models/current_state.dart';
+import '../../../sensor/domain/entities/hive.dart';
+import '../../../sensor/domain/entities/current_state.dart';
 import '../../../../core/factories/service_factory.dart';
 
 class HiveDetailsScreen extends StatefulWidget {
@@ -110,19 +110,23 @@ class _HiveDetailsScreenState extends State<HiveDetailsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildCurrentStateItem(
-                            'Température',
-                            '${currentState.temperature.toStringAsFixed(1)}°C',
-                            Icons.thermostat,
-                            Colors.redAccent,
-                          ),
-                          const SizedBox(width: 24),
-                          _buildCurrentStateItem(
-                            'Humidité',
-                            '${currentState.humidity.toStringAsFixed(1)}%',
-                            Icons.water_drop,
-                            Colors.blueAccent,
-                          ),
+                          if (currentState.temperature != null)
+                            _buildCurrentStateItem(
+                              'Température',
+                              '${currentState.temperature!.toStringAsFixed(1)}°C',
+                              Icons.thermostat,
+                              Colors.redAccent,
+                            ),
+                          if (currentState.temperature != null &&
+                              currentState.humidity != null)
+                            const SizedBox(width: 24),
+                          if (currentState.humidity != null)
+                            _buildCurrentStateItem(
+                              'Humidité',
+                              '${currentState.humidity!.toStringAsFixed(1)}%',
+                              Icons.water_drop,
+                              Colors.blueAccent,
+                            ),
                         ],
                       ),
                     ],

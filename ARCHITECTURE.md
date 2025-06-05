@@ -151,7 +151,7 @@ lib/
 │       │       └── alert_repository_interface.dart
 │       └── presentation/
 ├── screens/                       # 📱 Écrans globaux
-│   └── home_screen.dart           # Écran d'accueil principal
+│   └── main_screen.dart           # Écran principal avec navigation par onglets
 └── l10n/                          # 🌍 Internationalisation
 ```
 

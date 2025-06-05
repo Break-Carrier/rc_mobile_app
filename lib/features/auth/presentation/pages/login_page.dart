@@ -6,7 +6,12 @@ import '../widgets/auth_form.dart';
 
 /// Page de connexion et d'inscription
 class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+  final String? initialErrorMessage;
+
+  const LoginPage({
+    super.key,
+    this.initialErrorMessage,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +30,8 @@ class LoginPage extends StatelessWidget {
               ),
             );
           } else if (state is AuthAuthenticated) {
-            // Navigation vers le dashboard sera gérée par le router
-            Navigator.of(context).pushReplacementNamed('/dashboard');
+            // Navigation sera gérée par AuthWrapper
+            // Plus besoin de navigation manuelle ici
           }
         },
         builder: (context, state) {
@@ -36,11 +41,48 @@ class LoginPage extends StatelessWidget {
             );
           }
 
-          return const Padding(
-            padding: EdgeInsets.all(16.0),
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Center(
               child: SingleChildScrollView(
-                child: AuthForm(),
+                child: Column(
+                  children: [
+                    // Affichage du message d'erreur initial si présent
+                    if (initialErrorMessage != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          border: Border.all(color: Colors.red.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: Colors.red.shade700,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                initialErrorMessage!,
+                                style: TextStyle(
+                                  color: Colors.red.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    // Formulaire d'authentification
+                    const AuthForm(),
+                  ],
+                ),
               ),
             ),
           );

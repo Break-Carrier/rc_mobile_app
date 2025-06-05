@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../core/widgets/chart/sensor_chart.dart';
 import '../core/widgets/events/threshold_events.dart';
 import '../core/widgets/state/state_stream_widget.dart';
@@ -7,7 +8,7 @@ import '../core/widgets/threshold/threshold_config.dart';
 import '../core/factories/service_factory.dart';
 import '../features/sensor/domain/entities/hive.dart';
 import '../features/sensor/domain/entities/apiary.dart';
-import 'package:go_router/go_router.dart';
+import '../features/auth/presentation/bloc/auth_navigation_bloc.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -92,10 +93,51 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Mes Ruches'),
         actions: [
+          // Bouton d'ajout
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
               // TODO: Implémenter l'ajout d'une ruche
+            },
+          ),
+
+          // Menu de navigation clean
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              final authNavBloc = context.read<AuthNavigationBloc>();
+
+              switch (value) {
+                case 'auth_info':
+                  authNavBloc.add(const NavigateToAuthInfoRequested());
+                  break;
+                case 'logout':
+                  authNavBloc.add(const ShowLogoutDialogRequested());
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem<String>(
+                  value: 'auth_info',
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.blue),
+                      SizedBox(width: 8),
+                      Text('Informations d\'authentification'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Déconnexion'),
+                    ],
+                  ),
+                ),
+              ];
             },
           ),
         ],
@@ -199,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () {
-              context.go('/apiaries');
+              // TODO: Implémenter la navigation vers la page des ruchers
             },
             icon: const Icon(Icons.add),
             label: const Text('Ajouter une ruche'),

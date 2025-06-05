@@ -5,7 +5,7 @@ import '../widgets/dashboard_states.dart';
 import '../widgets/global_stats_card.dart';
 import '../widgets/apiaries_section.dart';
 import '../widgets/recent_alerts_section.dart';
-import '../widgets/quick_actions_section.dart';
+//import '../widgets/quick_actions_section.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -91,7 +91,7 @@ class _LoadedContent extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Actions rapides
-            const QuickActionsSection(),
+            //const QuickActionsSection(),
           ],
         ),
       ),

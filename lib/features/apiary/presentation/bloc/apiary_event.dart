@@ -65,3 +65,24 @@ class RefreshApiaries extends ApiaryEvent {
 class ResetApiaryState extends ApiaryEvent {
   const ResetApiaryState();
 }
+
+/// Événement interne pour les mises à jour du stream (ne pas utiliser directement)
+class ApiariesStreamUpdated extends ApiaryEvent {
+  final List<dynamic> apiaries;
+  final bool isWatching;
+
+  const ApiariesStreamUpdated(this.apiaries, {this.isWatching = true});
+
+  @override
+  List<Object?> get props => [apiaries, isWatching];
+}
+
+/// Événement interne pour les erreurs du stream (ne pas utiliser directement)
+class ApiariesStreamError extends ApiaryEvent {
+  final String error;
+
+  const ApiariesStreamError(this.error);
+
+  @override
+  List<Object?> get props => [error];
+}

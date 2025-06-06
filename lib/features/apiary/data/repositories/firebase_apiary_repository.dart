@@ -224,39 +224,73 @@ class FirebaseApiaryRepository implements ApiaryRepository {
     _logger.d('Écoute des ruchers pour l\'utilisateur: $userId');
 
     return _userApiariesRef.child(userId).onValue.asyncMap((event) async {
-      if (!event.snapshot.exists) {
+      try {
+        final apiaryIds = await _extractApiaryIds(event);
+        if (apiaryIds.isEmpty) {
+          return <Apiary>[];
+        }
+        return await _fetchApiariesByIds(apiaryIds);
+      } catch (e) {
+        _logger.e('Erreur dans watchUserApiaries: $e');
         return <Apiary>[];
       }
-
-      final userApiariesData = event.snapshot.value as Map<dynamic, dynamic>;
-      final apiaryIds = <String>[];
-
-      for (final entry in userApiariesData.entries) {
-        if (entry.value == true) {
-          apiaryIds.add(entry.key.toString());
-        }
-      }
-
-      if (apiaryIds.isEmpty) {
-        return <Apiary>[];
-      }
-
-      // Récupérer les données des ruchers
-      final apiaries = <Apiary>[];
-      for (final apiaryId in apiaryIds) {
-        try {
-          final apiarySnapshot = await _apiariesRef.child(apiaryId).get();
-          if (apiarySnapshot.exists) {
-            final apiaryData = apiarySnapshot.value as Map<dynamic, dynamic>;
-            final apiary = ApiaryModel.fromMap(apiaryId, apiaryData);
-            apiaries.add(apiary);
-          }
-        } catch (e) {
-          _logger.w('Erreur lors de la récupération du rucher $apiaryId: $e');
-        }
-      }
-
-      return apiaries;
     });
+  }
+
+  /// Extrait les IDs des ruchers depuis l'événement Firebase
+  Future<List<String>> _extractApiaryIds(DatabaseEvent event) async {
+    if (!event.snapshot.exists) {
+      return <String>[];
+    }
+
+    final userApiariesData = event.snapshot.value;
+    if (userApiariesData is! Map) {
+      _logger.w('Structure inattendue pour les ruchers utilisateur');
+      return <String>[];
+    }
+
+    final apiaryIds = <String>[];
+    for (final entry in userApiariesData.entries) {
+      if (entry.value == true) {
+        apiaryIds.add(entry.key.toString());
+      }
+    }
+
+    return apiaryIds;
+  }
+
+  /// Récupère les détails des ruchers par leurs IDs
+  Future<List<Apiary>> _fetchApiariesByIds(List<String> apiaryIds) async {
+    final apiaries = <Apiary>[];
+
+    for (final apiaryId in apiaryIds) {
+      final apiary = await _fetchApiaryById(apiaryId);
+      if (apiary != null) {
+        apiaries.add(apiary);
+      }
+    }
+
+    return apiaries;
+  }
+
+  /// Récupère un rucher par son ID (version interne)
+  Future<Apiary?> _fetchApiaryById(String apiaryId) async {
+    try {
+      final apiarySnapshot = await _apiariesRef.child(apiaryId).get();
+      if (!apiarySnapshot.exists) {
+        return null;
+      }
+
+      final apiaryData = apiarySnapshot.value;
+      if (apiaryData is! Map<dynamic, dynamic>) {
+        _logger.w('Données malformées pour le rucher $apiaryId');
+        return null;
+      }
+
+      return ApiaryModel.fromMap(apiaryId, apiaryData);
+    } catch (e) {
+      _logger.w('Erreur lors de la récupération du rucher $apiaryId: $e');
+      return null;
+    }
   }
 }

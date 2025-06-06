@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logger/logger.dart';
 
+import '../../domain/entities/apiary.dart';
 import '../../domain/usecases/create_apiary.dart';
 import '../../domain/usecases/delete_apiary.dart';
 import '../../domain/usecases/get_user_apiaries.dart';
@@ -40,6 +41,8 @@ class ApiaryBloc extends Bloc<ApiaryEvent, ApiaryState> {
     on<DeleteApiaryRequested>(_onDeleteApiaryRequested);
     on<RefreshApiaries>(_onRefreshApiaries);
     on<ResetApiaryState>(_onResetApiaryState);
+    on<ApiariesStreamUpdated>(_onApiariesStreamUpdated);
+    on<ApiariesStreamError>(_onApiariesStreamError);
   }
 
   /// Charge les ruchers de l'utilisateur (une fois)
@@ -54,8 +57,18 @@ class ApiaryBloc extends Bloc<ApiaryEvent, ApiaryState> {
       final result = await _getUserApiaries();
 
       if (result.error != null) {
-        _logger.e('Erreur lors du chargement des ruchers: ${result.error}');
-        emit(ApiaryError(result.error!.toString()));
+        final errorMessage = result.error!.toString();
+        _logger.e('Erreur lors du chargement des ruchers: $errorMessage');
+
+        // Si utilisateur non connecté, afficher l'état vide
+        if (errorMessage.contains('Utilisateur non connecté')) {
+          _logger.w('Utilisateur non connecté, affichage de l\'état vide');
+          emit(const ApiaryEmpty());
+          return;
+        }
+
+        // Autres erreurs = vraie erreur
+        emit(ApiaryError(errorMessage));
         return;
       }
 
@@ -87,7 +100,9 @@ class ApiaryBloc extends Bloc<ApiaryEvent, ApiaryState> {
 
       final stream = _getUserApiaries.watchUserApiaries();
       if (stream == null) {
-        emit(const ApiaryError('Utilisateur non connecté'));
+        // Utilisateur non connecté = état vide (pas d'erreur)
+        _logger.w('Utilisateur non connecté, affichage de l\'état vide');
+        emit(const ApiaryEmpty());
         return;
       }
 
@@ -97,17 +112,11 @@ class ApiaryBloc extends Bloc<ApiaryEvent, ApiaryState> {
       _apiariesSubscription = stream.listen(
         (apiaries) {
           _logger.d('Mise à jour temps réel: ${apiaries.length} ruchers');
-
-          if (apiaries.isEmpty) {
-            add(const ResetApiaryState());
-            emit(const ApiaryEmpty());
-          } else {
-            emit(ApiaryLoaded(apiaries, isWatching: true));
-          }
+          add(ApiariesStreamUpdated(apiaries));
         },
         onError: (error) {
           _logger.e('Erreur dans le stream des ruchers: $error');
-          emit(ApiaryError('Erreur de connexion: $error'));
+          add(ApiariesStreamError('Erreur de connexion: $error'));
         },
       );
     } catch (e, stackTrace) {
@@ -115,6 +124,27 @@ class ApiaryBloc extends Bloc<ApiaryEvent, ApiaryState> {
           error: e, stackTrace: stackTrace);
       emit(ApiaryError('Erreur lors de l\'écoute des ruchers: $e'));
     }
+  }
+
+  /// Gère les mises à jour du stream des ruchers
+  Future<void> _onApiariesStreamUpdated(
+    ApiariesStreamUpdated event,
+    Emitter<ApiaryState> emit,
+  ) async {
+    final apiaries = event.apiaries.cast<Apiary>();
+    if (apiaries.isEmpty) {
+      emit(const ApiaryEmpty());
+    } else {
+      emit(ApiaryLoaded(apiaries, isWatching: event.isWatching));
+    }
+  }
+
+  /// Gère les erreurs du stream des ruchers
+  Future<void> _onApiariesStreamError(
+    ApiariesStreamError event,
+    Emitter<ApiaryState> emit,
+  ) async {
+    emit(ApiaryError(event.error));
   }
 
   /// Arrête l'écoute en temps réel

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/error/app_error.dart';
+
 import '../../domain/usecases/create_user_use_case.dart';
+import '../../di/admin_injection.dart';
 import '../../../user_profile/domain/entities/user_role_entity.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 
 /// Écran de création d'un nouveau compte apiculteur
 ///
@@ -401,34 +404,24 @@ class _CreateBeekeeperScreenState extends State<CreateBeekeeperScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Remplacer par l'injection de dépendance
-      // Pour l'instant, on simule la création avec un placeholder
-      await Future.delayed(const Duration(seconds: 2));
+      // Récupération de l'ID de l'admin actuel
+      final currentAdminId = _getCurrentAdminId();
+      if (currentAdminId == null) {
+        _showError('Impossible de récupérer l\'ID de l\'administrateur');
+        return;
+      }
 
-      // Simulation d'un mot de passe généré
-      const generatedPassword = 'TempPass123!';
+      // Utilisation de l'injection de dépendances
+      final createUserUseCase = AdminInjection.getCreateUserUseCase();
 
-      setState(() {
-        _generatedPassword = generatedPassword;
-      });
+      final fullName =
+          '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}';
 
-      _showSuccess('Compte créé avec succès !\n'
-          'L\'apiculteur recevra ses identifiants par email.');
-
-      // Ici nous utiliserions le vrai CreateUserUseCase :
-      /*
-      final createUserUseCase = CreateUserUseCase(
-        authService,  // À injecter
-        userProfileRepository,  // À injecter
-      );
-
-      final fullName = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}';
-      
       final params = CreateUserParams(
         email: _emailController.text.trim(),
         fullName: fullName,
         roleType: UserRoleType.pendingBeekeeper,
-        createdByAdminId: 'current_admin_id',  // TODO: Récupérer l'ID admin actuel
+        createdByAdminId: currentAdminId,
         phoneNumber: _phoneController.text.trim().isEmpty
             ? null
             : _phoneController.text.trim(),
@@ -442,16 +435,26 @@ class _CreateBeekeeperScreenState extends State<CreateBeekeeperScreen> {
         });
 
         _showSuccess('Compte créé avec succès !\n'
-            'L\'apiculteur recevra ses identifiants par email.');
+            'Email: ${result.data.email}\n'
+            'Mot de passe temporaire généré.');
       } else if (result is CreateUserFailure) {
         _showError(result.error.message);
       }
-      */
     } catch (e) {
       _showError('Erreur inattendue: ${e.toString()}');
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  /// Récupère l'ID de l'administrateur actuellement connecté
+  String? _getCurrentAdminId() {
+    // Récupération depuis le BlocProvider
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      return authState.user.id;
+    }
+    return null;
   }
 
   void _copyToClipboard(String text) {

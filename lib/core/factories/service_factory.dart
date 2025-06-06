@@ -9,6 +9,7 @@ import '../../features/sensor/domain/entities/time_filter.dart';
 import '../../features/apiary/data/injection/apiary_injection.dart';
 import '../../features/hive/data/injection/hive_injection.dart';
 import '../../features/auth/di/auth_injection.dart';
+import '../../features/admin/di/admin_injection.dart';
 import '../../features/auth/domain/usecases/get_auth_state.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/data/datasources/auth_remote_data_source.dart';
@@ -87,6 +88,9 @@ class ServiceFactory {
       logger.d('🐝 Initialisation des dépendances de ruche...');
       HiveInjection.setupHiveDependencies();
 
+      logger.d('🔐 Initialisation des dépendances d\'administration...');
+      AdminInjection.setupAdminDependencies();
+
       logger.d('⚡ Initialisation du coordinateur...');
       final coordinator = getHiveServiceCoordinator();
       await coordinator.initialize();
@@ -158,6 +162,7 @@ class ServiceFactory {
     _coordinator?.dispose();
     ApiaryInjection.resetApiaryDependencies();
     HiveInjection.resetHiveDependencies();
+    AdminInjection.resetAdminDependencies();
 
     // Reset auth dependencies
     AuthInjection.resetAuthDependencies();

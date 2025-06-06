@@ -18,7 +18,7 @@ hive/
 │       └── hive_repository_interface.dart
 ├── presentation/               # Couche de présentation
 │   ├── screens/                # Écrans complets
-│   │   └── hive_details_screen.dart
+│   │   └── hive_detail_screen.dart
 │   └── widgets/                # Composants UI réutilisables
 │       └── (à venir: widgets spécifiques aux ruches)
 └── README.md                   # Documentation de la fonctionnalité
@@ -83,4 +83,3 @@ Cette feature est en cours de migration depuis l'architecture précédente. Les 
 2. Ajout des fonctionnalités manquantes et amélioration de l'UI
 3. Migration des écrans liés (lectures, alertes)
 4. Tests et optimisations
- 

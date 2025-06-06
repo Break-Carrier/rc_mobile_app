@@ -8,6 +8,7 @@ import '../../domain/repositories/hive_repository.dart';
 import '../../domain/usecases/create_hive.dart';
 import '../../domain/usecases/delete_hive.dart';
 import '../../domain/usecases/get_apiary_hives.dart';
+import '../../domain/usecases/get_hive_by_id.dart';
 import '../repositories/firebase_hive_repository.dart';
 import '../../presentation/bloc/hive_bloc.dart';
 
@@ -50,6 +51,10 @@ class HiveInjection {
       ),
     );
 
+    _getIt.registerLazySingleton<GetHiveById>(
+      () => GetHiveById(_getIt<HiveRepository>()),
+    );
+
     // BLoC
     _getIt.registerFactory<HiveBloc>(
       () => HiveBloc(
@@ -63,6 +68,9 @@ class HiveInjection {
 
   /// Récupère une instance du BLoC
   static HiveBloc getHiveBloc() => _getIt<HiveBloc>();
+
+  /// Récupère une instance du use case GetHiveById
+  static GetHiveById getHiveByIdUseCase() => _getIt<GetHiveById>();
 
   /// Supprime toutes les dépendances du module (pour les tests)
   static void resetHiveDependencies() {
@@ -80,6 +88,9 @@ class HiveInjection {
     }
     if (_getIt.isRegistered<DeleteHive>()) {
       _getIt.unregister<DeleteHive>();
+    }
+    if (_getIt.isRegistered<GetHiveById>()) {
+      _getIt.unregister<GetHiveById>();
     }
   }
 }

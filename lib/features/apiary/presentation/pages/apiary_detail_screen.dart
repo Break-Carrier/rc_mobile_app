@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/error_widget.dart';
@@ -9,7 +10,6 @@ import '../../../hive/presentation/bloc/hive_event.dart';
 import '../../../hive/presentation/bloc/hive_state.dart';
 import '../../../hive/presentation/widgets/hive_card.dart';
 import '../../../hive/presentation/widgets/create_hive_dialog.dart';
-import '../../../hive/presentation/pages/hive_detail_screen.dart';
 import '../../domain/entities/apiary.dart';
 
 /// Écran de détail d'un rucher avec ses ruches
@@ -444,11 +444,7 @@ class _ApiaryDetailView extends StatelessWidget {
   }
 
   void _navigateToHiveDetail(BuildContext context, dynamic hive) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => HiveDetailScreen(hive: hive),
-      ),
-    );
+    context.go('/hive/${hive.id}/detail');
   }
 }
 

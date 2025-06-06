@@ -37,55 +37,66 @@ class HiveModel extends Hive {
     );
   }
 
-  /// Crée un modèle depuis les données Firebase
+  /// Crée un modèle depuis une Map Firebase
   factory HiveModel.fromMap(String id, Map<dynamic, dynamic> map) {
     return HiveModel(
       id: id,
-      name: map['name']?.toString() ?? '',
-      apiaryId: map['apiaryId']?.toString() ?? '',
-      ownerId: map['ownerId']?.toString() ?? '',
-      description: map['description']?.toString(),
-      hiveType: map['hiveType']?.toString(),
-      material: map['material']?.toString(),
-      frameCount: map['frameCount']?.toInt(),
-      isActive: map['isActive'] == true,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(
-        map['createdAt']?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
-      ),
+      name: map['name'] as String? ?? '',
+      apiaryId: map['apiaryId'] as String? ?? '',
+      ownerId: map['ownerId'] as String? ?? '',
+      description: map['description'] as String?,
+      hiveType: map['hiveType'] as String?,
+      material: map['material'] as String?,
+      frameCount: map['frameCount'] as int?,
+      isActive: map['isActive'] as bool? ?? true,
+      createdAt: map['createdAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int)
+          : DateTime.now(),
       updatedAt: map['updatedAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'].toInt())
+          ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int)
           : null,
       lastInspection: map['lastInspection'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['lastInspection'].toInt())
+          ? DateTime.fromMillisecondsSinceEpoch(map['lastInspection'] as int)
           : null,
-      metadata: map['metadata'] != null
-          ? Map<String, dynamic>.from(map['metadata'] as Map)
-          : null,
+      metadata: map['metadata'] as Map<String, dynamic>?,
     );
   }
 
-  /// Convertit vers le format Firebase
+  /// Convertit en Map pour Firebase
   Map<String, dynamic> toMap() {
-    final map = <String, dynamic>{
+    return {
       'name': name,
       'apiaryId': apiaryId,
       'ownerId': ownerId,
+      'description': description,
+      'hiveType': hiveType,
+      'material': material,
+      'frameCount': frameCount,
       'isActive': isActive,
       'createdAt': createdAt.millisecondsSinceEpoch,
+      'updatedAt': updatedAt?.millisecondsSinceEpoch,
+      'lastInspection': lastInspection?.millisecondsSinceEpoch,
+      'metadata': metadata,
     };
+  }
 
-    // Ajouter les champs optionnels
-    if (description != null) map['description'] = description;
-    if (hiveType != null) map['hiveType'] = hiveType;
-    if (material != null) map['material'] = material;
-    if (frameCount != null) map['frameCount'] = frameCount;
-    if (updatedAt != null) map['updatedAt'] = updatedAt!.millisecondsSinceEpoch;
-    if (lastInspection != null) {
-      map['lastInspection'] = lastInspection!.millisecondsSinceEpoch;
-    }
-    if (metadata != null) map['metadata'] = metadata;
-
-    return map;
+  /// Convertit en entité
+  Hive toEntity() {
+    return Hive(
+      id: id,
+      name: name,
+      apiaryId: apiaryId,
+      ownerId: ownerId,
+      description: description,
+      hiveType: hiveType,
+      material: material,
+      frameCount: frameCount,
+      isActive: isActive,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      lastInspection: lastInspection,
+      metadata: metadata,
+    );
   }
 
   /// Crée une copie avec mise à jour de la date

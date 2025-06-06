@@ -138,7 +138,7 @@ lib/
 │   │   │       └── hive_repository_interface.dart
 │   │   └── presentation/
 │   │       └── pages/
-│   │           ├── hive_details_screen.dart
+│   │           ├── hive_detail_screen.dart
 │   │           └── hives_screen.dart
 │   └── alert/                     # 🔔 Système d'alertes
 │       ├── data/

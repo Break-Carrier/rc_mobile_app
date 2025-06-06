@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/hive.dart';
+import '../pages/hive_detail_screen.dart';
 
 /// Carte d'affichage d'une ruche
 class HiveCard extends StatelessWidget {
@@ -27,7 +28,7 @@ class HiveCard extends StatelessWidget {
         ),
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap: onTap ?? () => _navigateToDetails(context),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -36,91 +37,55 @@ class HiveCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor().withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.widgets,
-                      color: _getStatusColor(),
-                      size: 20,
-                    ),
+                  Icon(
+                    _getStatusIcon(),
+                    color: _getStatusColor(context),
+                    size: 20,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          hive.name,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            _StatusChip(
-                              label: hive.status,
-                              color: _getStatusColor(),
-                            ),
-                            if (hive.needsInspection) ...[
-                              const SizedBox(width: 8),
-                              _StatusChip(
-                                label: 'Inspection requise',
-                                color: Colors.orange,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
+                    child: Text(
+                      hive.name,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'edit':
-                          onEdit?.call();
-                          break;
-                        case 'delete':
-                          onDelete?.call();
-                          break;
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit_outlined),
-                            SizedBox(width: 8),
-                            Text('Modifier'),
-                          ],
+                  if (!hive.isActive)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Inactive',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete_outlined, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Supprimer',
-                                style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
                 ],
               ),
+              const SizedBox(height: 8),
+              Text(
+                hive.status,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: _getStatusColor(context),
+                    ),
+              ),
               if (hive.description?.isNotEmpty ?? false) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
                   hive.description!,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -128,44 +93,38 @@ class HiveCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _InfoChip(
-                    icon: Icons.category_outlined,
-                    label: hive.hiveType ?? 'Non défini',
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                  const SizedBox(width: 8),
-                  _InfoChip(
-                    icon: Icons.build_outlined,
-                    label: hive.material ?? 'Non défini',
-                    color: Theme.of(context).colorScheme.tertiary,
-                  ),
-                  const SizedBox(width: 8),
-                  _InfoChip(
-                    icon: Icons.grid_view,
-                    label: '${hive.frameCount ?? 0} cadres',
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ],
-              ),
-              if (hive.lastInspection != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
+                  if (hive.hiveType != null) ...[
                     Icon(
-                      Icons.calendar_today_outlined,
+                      Icons.home_work,
                       size: 14,
-                      color: Theme.of(context).colorScheme.outline,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Dernière inspection: ${_formatDate(hive.lastInspection!)}',
+                      hive.hiveType!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
+                    const Spacer(),
                   ],
-                ),
-              ],
+                  if (onEdit != null)
+                    IconButton(
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_outlined),
+                      iconSize: 18,
+                      tooltip: 'Modifier',
+                    ),
+                  if (onDelete != null)
+                    IconButton(
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete_outline),
+                      iconSize: 18,
+                      tooltip: 'Supprimer',
+                    ),
+                ],
+              ),
             ],
           ),
         ),
@@ -173,34 +132,32 @@ class HiveCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return "aujourd'hui";
-    } else if (difference.inDays == 1) {
-      return "hier";
-    } else if (difference.inDays < 7) {
-      return "il y a ${difference.inDays} jours";
-    } else {
-      return "${date.day}/${date.month}/${date.year}";
-    }
+  void _navigateToDetails(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => HiveDetailScreen(hive: hive),
+      ),
+    );
   }
 
-  Color _getStatusColor() {
-    switch (hive.statusColor) {
-      case 'green':
-        return Colors.green;
-      case 'orange':
-        return Colors.orange;
-      case 'red':
-        return Colors.red;
-      case 'grey':
-        return Colors.grey;
-      default:
-        return Colors.grey;
+  Color _getStatusColor(BuildContext context) {
+    if (!hive.isActive) return Theme.of(context).colorScheme.error;
+    if (hive.needsInspection) return Theme.of(context).colorScheme.error;
+
+    final daysSinceInspection = hive.lastInspection != null
+        ? DateTime.now().difference(hive.lastInspection!).inDays
+        : 999;
+
+    if (daysSinceInspection > 14) {
+      return Theme.of(context).colorScheme.tertiary;
     }
+    return Theme.of(context).colorScheme.primary;
+  }
+
+  IconData _getStatusIcon() {
+    if (!hive.isActive) return Icons.pause_circle_outline;
+    if (hive.needsInspection) return Icons.warning_outlined;
+    return Icons.check_circle_outline;
   }
 }
 

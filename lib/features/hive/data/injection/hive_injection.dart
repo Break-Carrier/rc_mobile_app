@@ -49,10 +49,26 @@ class HiveInjection {
         _getIt<GetCurrentUserId>(),
       ),
     );
+
+    // BLoC
+    _getIt.registerFactory<HiveBloc>(
+      () => HiveBloc(
+        getApiaryHives: _getIt<GetApiaryHives>(),
+        createHive: _getIt<CreateHive>(),
+        deleteHive: _getIt<DeleteHive>(),
+        logger: _getIt<Logger>(),
+      ),
+    );
   }
+
+  /// Récupère une instance du BLoC
+  static HiveBloc getHiveBloc() => _getIt<HiveBloc>();
 
   /// Supprime toutes les dépendances du module (pour les tests)
   static void resetHiveDependencies() {
+    if (_getIt.isRegistered<HiveBloc>()) {
+      _getIt.unregister<HiveBloc>();
+    }
     if (_getIt.isRegistered<HiveRepository>()) {
       _getIt.unregister<HiveRepository>();
     }
@@ -65,15 +81,5 @@ class HiveInjection {
     if (_getIt.isRegistered<DeleteHive>()) {
       _getIt.unregister<DeleteHive>();
     }
-  }
-
-  /// Obtient une instance du HiveBloc
-  static HiveBloc getHiveBloc() {
-    return HiveBloc(
-      getApiaryHives: _getIt<GetApiaryHives>(),
-      createHive: _getIt<CreateHive>(),
-      deleteHive: _getIt<DeleteHive>(),
-      logger: _getIt<Logger>(),
-    );
   }
 }

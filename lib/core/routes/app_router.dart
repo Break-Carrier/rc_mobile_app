@@ -6,7 +6,8 @@ import '../../features/alert/presentation/pages/alerts_screen.dart';
 import '../../features/apiary/presentation/pages/apiaries_screen.dart';
 import '../../features/hive/presentation/pages/hives_screen.dart';
 import '../../features/dashboard/presentation/pages/dashboard_screen.dart';
-import '../../features/hive/presentation/pages/hive_details_screen.dart';
+// Note: HiveDetailScreen nécessite un objet Hive complet, pas juste un ID
+// Cette route sera refactorisée pour intégrer les capteurs temps réel
 
 /// Configuration des routes de l'application
 class AppRouter {
@@ -42,13 +43,19 @@ class AppRouter {
               return HivesScreen(apiaryId: apiaryId);
             },
           ),
-          // Route des détails d'une ruche
+          // Route des détails d'une ruche (à refactoriser pour intégrer capteurs)
           GoRoute(
             path: '/hive/:id',
             name: 'hive_details',
             builder: (context, state) {
               final hiveId = state.pathParameters['id']!;
-              return HiveDetailsScreen(hiveId: hiveId);
+              return Scaffold(
+                appBar: AppBar(title: Text('Détails ruche $hiveId')),
+                body: const Center(
+                  child: Text('Fonctionnalité en cours de refactorisation\n'
+                      'pour intégrer les capteurs temps réel'),
+                ),
+              );
             },
             routes: [
               // Sous-route pour les lectures des capteurs

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/user_profile_entity.dart';
 import '../../domain/entities/user_role_entity.dart';
 import '../../domain/entities/beekeeper_details_entity.dart';
@@ -420,8 +424,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // === Données de test (Temporaire) ===
   Future<bool> _checkIfUserIsAdmin() async {
-    // TODO: Remplacer par la vraie logique
-    return Future.value(true);
+    try {
+      // Vérification via Firestore
+      final currentUser = context.read<AuthBloc>().state;
+      if (currentUser is! AuthAuthenticated) return false;
+
+      final adminDoc = await FirebaseFirestore.instance
+          .collection('admin_config')
+          .doc(currentUser.user.id)
+          .get();
+
+      return adminDoc.exists && (adminDoc.data()?['isAdmin'] == true);
+    } catch (e) {
+      // En cas d'erreur, on permet l'accès pour le debug
+      return true;
+    }
   }
 
   Future<UserProfileEntity?> _loadMockProfile() async {
@@ -455,7 +472,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToAdminPanel(BuildContext context) {
-    context.push('/admin');
+    // Affichage d'un dialog pour choisir entre bootstrap ou panneau normal
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Administration'),
+        content: const Text(
+            'Voulez-vous créer votre profil admin ou accéder au panneau d\'administration ?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.push('/admin/bootstrap');
+            },
+            child: const Text('Créer profil admin'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.push('/admin');
+            },
+            child: const Text('Panneau admin'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToBeekeeperManagement(BuildContext context) {

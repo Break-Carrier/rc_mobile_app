@@ -4,6 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_screen.dart';
 import '../../features/admin/presentation/pages/create_beekeeper_screen.dart';
+import '../../features/admin/presentation/pages/admin_bootstrap_screen.dart';
+import '../../debug/debug_info_screen.dart';
+import '../../debug/admin_management_screen.dart' as debug_admin;
+import '../../features/admin/presentation/pages/admin_management_screen.dart'
+    as admin_mgmt;
 // import '../../features/admin/presentation/pages/manage_beekeepers_screen.dart';
 // import '../../features/admin/presentation/pages/pending_validations_screen.dart';
 import '../../features/apiary/presentation/pages/apiaries_screen.dart';
@@ -21,6 +26,7 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/di/auth_injection.dart';
+import '../../features/admin/di/admin_injection.dart';
 
 /// Notifier pour écouter les changements d'état d'authentification
 class AuthChangeNotifier extends ChangeNotifier {
@@ -127,6 +133,27 @@ class AppRouter {
             name: 'settings',
             builder: (context, state) => const SettingsScreen(),
           ),
+          GoRoute(
+            path: '/debug',
+            name: 'debug',
+            builder: (context, state) => const DebugInfoScreen(),
+          ),
+          GoRoute(
+            path: '/debug/admin',
+            name: 'debug_admin',
+            builder: (context, state) =>
+                const debug_admin.AdminManagementScreen(),
+          ),
+
+          // Nouvelle route admin management
+          GoRoute(
+            path: '/admin/management',
+            name: 'admin_management',
+            builder: (context, state) => BlocProvider(
+              create: (context) => AdminInjection.getAdminRoleBloc(),
+              child: const admin_mgmt.AdminManagementScreen(),
+            ),
+          ),
 
           // Routes d'administration
           GoRoute(
@@ -138,6 +165,11 @@ class AppRouter {
             path: '/admin/create-beekeeper',
             name: 'create_beekeeper',
             builder: (context, state) => const CreateBeekeeperScreen(),
+          ),
+          GoRoute(
+            path: '/admin/bootstrap',
+            name: 'admin_bootstrap',
+            builder: (context, state) => const AdminBootstrapScreen(),
           ),
           GoRoute(
             path: '/admin/beekeepers',

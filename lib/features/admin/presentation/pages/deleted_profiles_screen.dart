@@ -16,7 +16,8 @@ class DeletedProfilesScreen extends StatefulWidget {
 class _DeletedProfilesScreenState extends State<DeletedProfilesScreen> {
   bool _includeExpired = false;
   Duration? _maxAge = const Duration(days: 30);
-  String? _searchQuery;
+  String?
+      _searchQuery; // TODO: Implémenter la logique de filtrage par recherche
 
   @override
   void initState() {

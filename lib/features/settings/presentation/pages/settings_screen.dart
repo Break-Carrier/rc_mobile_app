@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 
@@ -106,6 +107,15 @@ class SettingsScreen extends StatelessWidget {
                     Text('Développée avec Flutter et Firebase'),
                   ],
                 );
+              },
+            ),
+            _buildTile(
+              icon: Icons.bug_report,
+              title: 'Debug Info',
+              subtitle: 'Informations de débogage (Dev)',
+              textColor: Colors.orange,
+              onTap: () {
+                context.go('/debug');
               },
             ),
           ]),

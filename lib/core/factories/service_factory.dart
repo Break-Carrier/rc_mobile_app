@@ -9,6 +9,7 @@ import '../../features/sensor/domain/entities/time_filter.dart';
 import '../../features/apiary/data/injection/apiary_injection.dart';
 import '../../features/hive/data/injection/hive_injection.dart';
 import '../../features/auth/di/auth_injection.dart';
+import '../../features/user_profile/di/user_profile_injection.dart';
 import '../../features/admin/di/admin_injection.dart';
 import '../../features/auth/domain/usecases/get_auth_state.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
@@ -80,6 +81,10 @@ class ServiceFactory {
       logger.d('🔐 Initialisation des dépendances d\'authentification...');
       // Initialiser les modules d'authentification d'abord
       AuthInjection.setupAuthDependencies();
+
+      logger.d('👤 Initialisation des dépendances de profil utilisateur...');
+      // Initialiser UserProfile AVANT Admin (car Admin dépend de UserProfile)
+      UserProfileInjection.setupUserProfileDependencies();
 
       logger.d('🏠 Initialisation des dépendances d\'apiary...');
       // Initialiser les autres modules
@@ -166,6 +171,9 @@ class ServiceFactory {
 
     // Reset auth dependencies
     AuthInjection.resetAuthDependencies();
+
+    // Reset user profile dependencies
+    UserProfileInjection.resetUserProfileDependencies();
 
     _firebaseService = null;
     _currentStateService = null;

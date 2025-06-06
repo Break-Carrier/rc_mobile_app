@@ -8,7 +8,13 @@ class GetCurrentUserId {
 
   /// Retourne l'ID de l'utilisateur connecté ou null si non connecté
   String? call() {
-    final user = _getAuthState.getCurrentUser();
-    return user?.id;
+    try {
+      final user = _getAuthState.getCurrentUser();
+      return user?.id;
+    } catch (e) {
+      // Retourner null quand l'utilisateur n'est pas connecté
+      // permet à ApiaryBloc d'émettre une erreur explicite
+      return null;
+    }
   }
 }

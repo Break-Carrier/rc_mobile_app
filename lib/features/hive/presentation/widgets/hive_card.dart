@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/apiary.dart';
+import '../../domain/entities/hive.dart';
 
-/// Carte d'affichage d'un rucher
-class ApiaryCard extends StatelessWidget {
-  final Apiary apiary;
+/// Carte d'affichage d'une ruche
+class HiveCard extends StatelessWidget {
+  final Hive hive;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
-  const ApiaryCard({
+  const HiveCard({
     super.key,
-    required this.apiary,
+    required this.hive,
     this.onTap,
     this.onEdit,
     this.onDelete,
@@ -31,57 +31,49 @@ class ApiaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
-        child: Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+            children: [
               Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
+                      color: _getStatusColor().withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      Icons.hive,
-                      color: Theme.of(context).colorScheme.primary,
+                      Icons.widgets,
+                      color: _getStatusColor(),
                       size: 20,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          apiary.name,
+                          hive.name,
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                         ),
                         const SizedBox(height: 2),
-            Row(
-              children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: 14,
-                              color: Theme.of(context).colorScheme.outline,
+                        Row(
+                          children: [
+                            _StatusChip(
+                              label: hive.status,
+                              color: _getStatusColor(),
                             ),
-                            const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    apiary.location,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color:
-                                          Theme.of(context).colorScheme.outline,
-                                    ),
-                                overflow: TextOverflow.ellipsis,
+                            if (hive.needsInspection) ...[
+                              const SizedBox(width: 8),
+                              _StatusChip(
+                                label: 'Inspection requise',
+                                color: Colors.orange,
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       ],
@@ -118,46 +110,62 @@ class ApiaryCard extends StatelessWidget {
                             Text('Supprimer',
                                 style: TextStyle(color: Colors.red)),
                           ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-              ),
-              if (apiary.description.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  apiary.description,
-                  style: Theme.of(context).textTheme.bodyMedium,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-              const SizedBox(height: 12),
-          Row(
-            children: [
-                  _StatChip(
-                    icon: Icons.widgets_outlined,
-                    label: '${apiary.hiveCount} ruches',
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                  if (apiary.hasCoordinates) ...[
-              const SizedBox(width: 8),
-                    _StatChip(
-                      icon: Icons.gps_fixed,
-                      label: 'GPS',
-                      color: Theme.of(context).colorScheme.tertiary,
-                    ),
-                  ],
-                  const Spacer(),
-              Text(
-                    _formatDate(apiary.createdAt),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
                         ),
+                      ),
+                    ],
                   ),
                 ],
               ),
+              if (hive.description?.isNotEmpty ?? false) ...[
+                const SizedBox(height: 12),
+                Text(
+                  hive.description!,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _InfoChip(
+                    icon: Icons.category_outlined,
+                    label: hive.hiveType ?? 'Non défini',
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                  const SizedBox(width: 8),
+                  _InfoChip(
+                    icon: Icons.build_outlined,
+                    label: hive.material ?? 'Non défini',
+                    color: Theme.of(context).colorScheme.tertiary,
+                  ),
+                  const SizedBox(width: 8),
+                  _InfoChip(
+                    icon: Icons.grid_view,
+                    label: '${hive.frameCount ?? 0} cadres',
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
+              if (hive.lastInspection != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Dernière inspection: ${_formatDate(hive.lastInspection!)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -170,26 +178,68 @@ class ApiaryCard extends StatelessWidget {
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
-      return "Aujourd'hui";
+      return "aujourd'hui";
     } else if (difference.inDays == 1) {
-      return "Hier";
+      return "hier";
     } else if (difference.inDays < 7) {
-      return "Il y a ${difference.inDays} jours";
-    } else if (difference.inDays < 30) {
-      final weeks = (difference.inDays / 7).floor();
-      return "Il y a $weeks semaine${weeks > 1 ? 's' : ''}";
+      return "il y a ${difference.inDays} jours";
     } else {
       return "${date.day}/${date.month}/${date.year}";
     }
   }
+
+  Color _getStatusColor() {
+    switch (hive.statusColor) {
+      case 'green':
+        return Colors.green;
+      case 'orange':
+        return Colors.orange;
+      case 'red':
+        return Colors.red;
+      case 'grey':
+        return Colors.grey;
+      default:
+        return Colors.grey;
+    }
+  }
 }
 
-class _StatChip extends StatelessWidget {
+class _StatusChip extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _StatusChip({
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
 
-  const _StatChip({
+  const _InfoChip({
     required this.icon,
     required this.label,
     required this.color,
@@ -198,24 +248,24 @@ class _StatChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
-            size: 14,
+            size: 12,
             color: color,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 3),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: color,
               fontWeight: FontWeight.w500,
             ),

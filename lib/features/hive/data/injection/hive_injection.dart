@@ -9,6 +9,7 @@ import '../../domain/usecases/create_hive.dart';
 import '../../domain/usecases/delete_hive.dart';
 import '../../domain/usecases/get_apiary_hives.dart';
 import '../repositories/firebase_hive_repository.dart';
+import '../../presentation/bloc/hive_bloc.dart';
 
 /// Configuration de l'injection de dépendances pour le module Ruches
 class HiveInjection {
@@ -64,5 +65,15 @@ class HiveInjection {
     if (_getIt.isRegistered<DeleteHive>()) {
       _getIt.unregister<DeleteHive>();
     }
+  }
+
+  /// Obtient une instance du HiveBloc
+  static HiveBloc getHiveBloc() {
+    return HiveBloc(
+      getApiaryHives: _getIt<GetApiaryHives>(),
+      createHive: _getIt<CreateHive>(),
+      deleteHive: _getIt<DeleteHive>(),
+      logger: _getIt<Logger>(),
+    );
   }
 }

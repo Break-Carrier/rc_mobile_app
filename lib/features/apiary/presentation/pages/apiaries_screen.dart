@@ -197,9 +197,9 @@ class _BuildApiariesList extends StatelessWidget {
 
         // Indicateur de chargement superposé
         if (isLoading)
-          Container(
+          const SizedBox(
             height: 4,
-            child: const LinearProgressIndicator(),
+            child: LinearProgressIndicator(),
           ),
       ],
     );

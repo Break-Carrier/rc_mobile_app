@@ -65,7 +65,10 @@ class _ApiaryDetailView extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                      Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.8),
                       Theme.of(context).colorScheme.primaryContainer,
                     ],
                   ),

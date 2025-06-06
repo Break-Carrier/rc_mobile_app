@@ -141,16 +141,12 @@ class SettingsScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                // Déconnexion via AuthBloc
-                context.read<AuthBloc>().add(const SignOutRequested());
 
-                // Message de confirmation
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Déconnexion en cours...'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
+                // Masquer d'abord toute SnackBar existante pour éviter qu'elle reste
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+                // Déconnexion via AuthBloc (sera instantanée)
+                context.read<AuthBloc>().add(const SignOutRequested());
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,

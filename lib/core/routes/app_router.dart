@@ -14,31 +14,55 @@ import '../../features/hive/data/injection/hive_injection.dart';
 import '../../features/hive/domain/usecases/get_hive_by_id.dart';
 import '../../features/dashboard/presentation/pages/dashboard_screen.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/di/auth_injection.dart';
 
+/// Notifier pour écouter les changements d'état d'authentification
+class AuthChangeNotifier extends ChangeNotifier {
+  late final AuthBloc _authBloc;
+
+  AuthChangeNotifier() {
+    _authBloc = AuthInjection.getAuthBloc();
+    _authBloc.stream.listen((_) {
+      notifyListeners();
+    });
+  }
+
+  AuthState get currentState => _authBloc.state;
+}
+
 /// Configuration des routes de l'application
 class AppRouter {
+  static final AuthChangeNotifier _authChangeNotifier = AuthChangeNotifier();
+
   /// Instance unique du routeur
   static final GoRouter router = GoRouter(
     initialLocation: '/',
     debugLogDiagnostics: true,
+    refreshListenable: _authChangeNotifier,
     redirect: (context, state) {
-      // Vérifier l'état d'authentification
-      final authBloc = AuthInjection.getAuthBloc();
-      final authState = authBloc.state;
-
+      final authState = _authChangeNotifier.currentState;
       final isOnLoginPage = state.uri.path == '/login';
 
+      // Si pas authentifié ou erreur, rediriger vers login
       if (authState is AuthUnauthenticated || authState is AuthError) {
+        // Masquer les SnackBars avant redirection vers login
+        if (!isOnLoginPage) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          });
+        }
         return isOnLoginPage ? null : '/login';
       }
 
+      // Si authentifié et sur login, rediriger vers home
       if (authState is AuthAuthenticated && isOnLoginPage) {
         return '/';
       }
 
-      return null; // Pas de redirection
+      // Pas de redirection nécessaire
+      return null;
     },
     routes: [
       // Route de connexion

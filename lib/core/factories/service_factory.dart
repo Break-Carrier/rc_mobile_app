@@ -33,7 +33,7 @@ class ServiceFactory {
     return _firebaseService!;
   }
 
-  /// Service CurrentState avec Stream<CurrentState?>
+  /// Service CurrentState avec Stream CurrentState
   static CurrentStateService get currentStateService {
     _currentStateService ??= CurrentStateService(
       database: firebaseService.database,

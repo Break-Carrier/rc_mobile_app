@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../user_profile/domain/entities/user_profile_entity.dart';
 import '../../../user_profile/domain/entities/user_role_entity.dart';
-import '../../../user_profile/domain/entities/beekeeper_details_entity.dart';
 
 /// Écran d'administration pour gérer les profils supprimés
 ///
@@ -89,7 +88,10 @@ class _DeletedProfilesScreenState extends State<DeletedProfilesScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.3),
         border: Border(
           bottom: BorderSide(
             color: Theme.of(context).dividerColor,
@@ -133,9 +135,9 @@ class _DeletedProfilesScreenState extends State<DeletedProfilesScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

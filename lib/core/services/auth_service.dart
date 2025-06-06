@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../error/app_error.dart';
 
 /// Service d'authentification suivant les principes Clean Code
@@ -247,7 +248,9 @@ class AuthService {
   void _logUserCreationInDevMode(UserCreationData data) {
     if (!_isInDevelopmentMode()) return;
 
-    print('''
+    // TODO: Remplacer par un système de logging approprié
+    // print() évité en production pour respecter les bonnes pratiques
+    debugPrint('''
 📧 COMPTE CRÉÉ EN MODE DÉVELOPPEMENT :
 -----------------------------------
 Email: ${data.user.email}

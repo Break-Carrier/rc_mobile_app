@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../user_profile/domain/repositories/user_profile_repository.dart';
 import '../../../user_profile/domain/entities/user_profile_entity.dart';
@@ -163,10 +164,11 @@ class CreateUserUseCase {
     try {
       // TODO: Implémenter la suppression du compte Firebase
       // Nécessite Firebase Admin SDK ou Cloud Functions
-      print('ROLLBACK : Suppression du compte Firebase $userId nécessaire');
+      debugPrint(
+          'ROLLBACK : Suppression du compte Firebase $userId nécessaire');
     } catch (e) {
       // Log de l'erreur mais ne pas faire échouer le processus principal
-      print('Erreur lors du rollback du compte $userId: $e');
+      debugPrint('Erreur lors du rollback du compte $userId: $e');
     }
   }
 }

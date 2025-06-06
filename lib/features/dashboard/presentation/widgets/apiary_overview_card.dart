@@ -73,7 +73,7 @@ class ApiaryOverviewCard extends StatelessWidget {
                       context,
                       Icons.hive,
                       '${apiary.hiveIds.length}',
-                      'Ruches',
+                      apiary.hiveIds.length <= 1 ? 'Ruche' : 'Ruches',
                       Colors.amber,
                     ),
                   ),

@@ -53,21 +53,21 @@ class GlobalStatsCard extends StatelessWidget {
                 Expanded(
                   child: _StatItem(
                     value: '📊 ${apiaries.length}',
-                    label: 'Ruchers',
+                    label: apiaries.length <= 1 ? 'Rucher' : 'Ruchers',
                     color: Colors.blue,
                   ),
                 ),
                 Expanded(
                   child: _StatItem(
                     value: '🏠 $totalHives',
-                    label: 'Ruches',
+                    label: totalHives <= 1 ? 'Ruche' : 'Ruches',
                     color: Colors.amber.shade700,
                   ),
                 ),
                 Expanded(
                   child: _StatItem(
                     value: '⚠️ $alertCount',
-                    label: 'Alertes',
+                    label: alertCount <= 1 ? 'Alerte' : 'Alertes',
                     color: alertCount > 0 ? Colors.red : Colors.green,
                   ),
                 ),

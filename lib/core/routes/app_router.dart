@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
+import '../../features/admin/presentation/pages/admin_dashboard_screen.dart';
+import '../../features/admin/presentation/pages/create_beekeeper_screen.dart';
+// import '../../features/admin/presentation/pages/manage_beekeepers_screen.dart';
+// import '../../features/admin/presentation/pages/pending_validations_screen.dart';
 import '../../features/apiary/presentation/pages/apiaries_screen.dart';
 import '../../features/apiary/presentation/pages/apiary_detail_screen.dart';
 import '../../features/apiary/data/injection/apiary_injection.dart';
@@ -122,6 +126,34 @@ class AppRouter {
             path: '/settings',
             name: 'settings',
             builder: (context, state) => const SettingsScreen(),
+          ),
+
+          // Routes d'administration
+          GoRoute(
+            path: '/admin',
+            name: 'admin_dashboard',
+            builder: (context, state) => const AdminDashboardScreen(),
+          ),
+          GoRoute(
+            path: '/admin/create-beekeeper',
+            name: 'create_beekeeper',
+            builder: (context, state) => const CreateBeekeeperScreen(),
+          ),
+          GoRoute(
+            path: '/admin/beekeepers',
+            name: 'manage_beekeepers',
+            builder: (context, state) => const Scaffold(
+              body: Center(
+                  child: Text('Gestion des Apiculteurs - À implémenter')),
+            ),
+          ),
+          GoRoute(
+            path: '/admin/pending-validations',
+            name: 'pending_validations',
+            builder: (context, state) => const Scaffold(
+              body:
+                  Center(child: Text('Validations en Attente - À implémenter')),
+            ),
           ),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../domain/entities/user_profile_entity.dart';
 import '../../domain/entities/user_role_entity.dart';
 import '../../domain/entities/beekeeper_details_entity.dart';
@@ -454,7 +455,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToAdminPanel(BuildContext context) {
-    Navigator.pushNamed(context, '/admin');
+    context.push('/admin');
   }
 
   void _navigateToBeekeeperManagement(BuildContext context) {

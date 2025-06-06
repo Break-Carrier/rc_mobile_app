@@ -2,29 +2,18 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../sensor/domain/entities/apiary.dart';
-import '../../../sensor/domain/entities/hive.dart';
-import '../../../sensor/domain/entities/sensor_reading.dart';
-import '../../../sensor/domain/entities/time_filter.dart';
-import '../../data/repositories/dashboard_repository.dart';
-import '../../../../core/factories/service_factory.dart';
+import '../../../apiary/domain/entities/apiary.dart';
+import '../../../hive/domain/entities/hive.dart';
+import '../../../apiary/domain/usecases/get_user_apiaries.dart';
+import '../../../hive/domain/usecases/get_apiary_hives.dart';
+import 'package:get_it/get_it.dart';
 
 // Events
 abstract class DashboardEvent {}
 
-class LoadDashboardData extends DashboardEvent {
-  final TimeFilter timeFilter;
-
-  LoadDashboardData({this.timeFilter = TimeFilter.oneHour});
-}
+class LoadDashboardData extends DashboardEvent {}
 
 class RefreshDashboardData extends DashboardEvent {}
-
-class ChangeTimeFilter extends DashboardEvent {
-  final TimeFilter timeFilter;
-
-  ChangeTimeFilter({required this.timeFilter});
-}
 
 // States
 abstract class DashboardState {}
@@ -35,33 +24,24 @@ class DashboardLoading extends DashboardState {}
 
 class DashboardLoaded extends DashboardState {
   final List<Apiary> apiaries;
-  final List<Hive> hives;
-  final List<SensorReading> averageTemperatureReadings;
-  final TimeFilter currentTimeFilter;
-  final String? selectedHiveId;
+  final List<Hive> allHives;
+  final Map<String, List<Hive>> hivesByApiary;
 
   DashboardLoaded({
     required this.apiaries,
-    required this.hives,
-    required this.averageTemperatureReadings,
-    required this.currentTimeFilter,
-    this.selectedHiveId,
+    required this.allHives,
+    required this.hivesByApiary,
   });
 
   DashboardLoaded copyWith({
     List<Apiary>? apiaries,
-    List<Hive>? hives,
-    List<SensorReading>? averageTemperatureReadings,
-    TimeFilter? currentTimeFilter,
-    String? selectedHiveId,
+    List<Hive>? allHives,
+    Map<String, List<Hive>>? hivesByApiary,
   }) {
     return DashboardLoaded(
       apiaries: apiaries ?? this.apiaries,
-      hives: hives ?? this.hives,
-      averageTemperatureReadings:
-          averageTemperatureReadings ?? this.averageTemperatureReadings,
-      currentTimeFilter: currentTimeFilter ?? this.currentTimeFilter,
-      selectedHiveId: selectedHiveId ?? this.selectedHiveId,
+      allHives: allHives ?? this.allHives,
+      hivesByApiary: hivesByApiary ?? this.hivesByApiary,
     );
   }
 }
@@ -74,61 +54,61 @@ class DashboardError extends DashboardState {
 
 // BLoC
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
-  final coordinator = ServiceFactory.getHiveServiceCoordinator();
-  final DashboardRepository _dashboardRepository;
+  final GetUserApiaries _getUserApiaries;
 
   DashboardBloc({
-    DashboardRepository? dashboardRepository,
-  })  : _dashboardRepository = dashboardRepository ?? DashboardRepository(),
+    GetUserApiaries? getUserApiaries,
+  })  : _getUserApiaries = getUserApiaries ?? GetIt.instance<GetUserApiaries>(),
         super(DashboardInitial()) {
     on<LoadDashboardData>(_onLoadDashboardData);
     on<RefreshDashboardData>(_onRefreshDashboardData);
-    on<ChangeTimeFilter>(_onChangeTimeFilter);
   }
 
   Future<void> _onLoadDashboardData(
       LoadDashboardData event, Emitter<DashboardState> emit) async {
     try {
+      debugPrint('🐛 Chargement des données du dashboard');
       emit(DashboardLoading());
 
-      // Récupérer les ruchers et les ruches
-      final apiaries = await coordinator.getApiaries();
+      // Récupérer les ruchers de l'utilisateur
+      final apiariesResult = await _getUserApiaries();
 
-      if (apiaries.isEmpty) {
-        emit(DashboardLoaded(
-          apiaries: [],
-          hives: [],
-          averageTemperatureReadings: [],
-          currentTimeFilter: event.timeFilter,
-        ));
+      if (apiariesResult.error != null) {
+        emit(DashboardError(
+            message:
+                'Erreur lors du chargement des ruchers: ${apiariesResult.error}'));
         return;
       }
 
-      // Récupérer les ruches du premier rucher
-      final hives = await coordinator.getHivesForApiary(apiaries.first.id);
+      final apiaries = apiariesResult.result ?? [];
+      debugPrint('🐛 ${apiaries.length} ruchers chargés');
 
-      // Récupérer les données de température moyenne
-      final averageTemperatureReadings = await _dashboardRepository
-          .getAverageTemperatureForApiary(apiaries.first.id, event.timeFilter);
+      // Récupérer toutes les ruches via les ruchers pour éviter les problèmes d'index Firebase
+      final allHives = <Hive>[];
+      for (final apiary in apiaries) {
+        final apiaryHivesResult =
+            await GetIt.instance<GetApiaryHives>()(apiary.id);
+        if (apiaryHivesResult.error == null &&
+            apiaryHivesResult.result != null) {
+          allHives.addAll(apiaryHivesResult.result!);
+        }
+      }
+      debugPrint('🐛 ${allHives.length} ruches chargées via les ruchers');
 
-      // Mettre à jour le time filter dans le coordinator aussi
-      coordinator.setTimeFilter(event.timeFilter);
-
-      // Sélectionner la première ruche si disponible
-      final selectedHiveId = hives.isNotEmpty ? hives.first.id : null;
-      if (selectedHiveId != null) {
-        coordinator.setActiveHive(selectedHiveId);
+      // Organiser les ruches par rucher
+      final hivesByApiary = <String, List<Hive>>{};
+      for (final apiary in apiaries) {
+        hivesByApiary[apiary.id] =
+            allHives.where((hive) => hive.apiaryId == apiary.id).toList();
       }
 
       emit(DashboardLoaded(
         apiaries: apiaries,
-        hives: hives,
-        averageTemperatureReadings: averageTemperatureReadings,
-        currentTimeFilter: event.timeFilter,
-        selectedHiveId: selectedHiveId,
+        allHives: allHives,
+        hivesByApiary: hivesByApiary,
       ));
     } catch (e) {
-      debugPrint('❌ Error loading dashboard data: $e');
+      debugPrint('❌ Erreur lors du chargement du dashboard: $e');
       emit(
           DashboardError(message: 'Erreur lors du chargement des données: $e'));
     }
@@ -136,39 +116,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
   Future<void> _onRefreshDashboardData(
       RefreshDashboardData event, Emitter<DashboardState> emit) async {
-    if (state is DashboardLoaded) {
-      final currentState = state as DashboardLoaded;
-      await coordinator.refreshAllData();
-
-      add(LoadDashboardData(timeFilter: currentState.currentTimeFilter));
-    } else {
-      add(LoadDashboardData());
-    }
-  }
-
-  Future<void> _onChangeTimeFilter(
-      ChangeTimeFilter event, Emitter<DashboardState> emit) async {
-    if (state is DashboardLoaded) {
-      final currentState = state as DashboardLoaded;
-
-      // Mettre à jour le filtre dans le coordinator
-      coordinator.setTimeFilter(event.timeFilter);
-
-      if (currentState.apiaries.isNotEmpty) {
-        // Récupérer les nouvelles données de température moyenne
-        final newAverageTemperatureReadings =
-            await _dashboardRepository.getAverageTemperatureForApiary(
-                currentState.apiaries.first.id, event.timeFilter);
-
-        emit(currentState.copyWith(
-          currentTimeFilter: event.timeFilter,
-          averageTemperatureReadings: newAverageTemperatureReadings,
-        ));
-      } else {
-        emit(currentState.copyWith(
-          currentTimeFilter: event.timeFilter,
-        ));
-      }
-    }
+    debugPrint('🐛 Rafraîchissement des données du dashboard');
+    add(LoadDashboardData());
   }
 }

@@ -76,12 +76,18 @@ class _LoadedContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Résumé Global
-            GlobalStatsCard(apiaries: state.apiaries),
+            GlobalStatsCard(
+              apiaries: state.apiaries,
+              allHives: state.allHives,
+            ),
 
             const SizedBox(height: 20),
 
             // Mes Ruchers
-            ApiariesSection(apiaries: state.apiaries),
+            ApiariesSection(
+              apiaries: state.apiaries,
+              hivesByApiary: state.hivesByApiary,
+            ),
 
             const SizedBox(height: 20),
 

@@ -9,6 +9,7 @@ import '../../domain/usecases/create_hive.dart';
 import '../../domain/usecases/delete_hive.dart';
 import '../../domain/usecases/get_apiary_hives.dart';
 import '../../domain/usecases/get_hive_by_id.dart';
+import '../../domain/usecases/get_all_user_hives.dart';
 import '../repositories/firebase_hive_repository.dart';
 import '../../presentation/bloc/hive_bloc.dart';
 
@@ -55,6 +56,13 @@ class HiveInjection {
       () => GetHiveById(_getIt<HiveRepository>()),
     );
 
+    _getIt.registerLazySingleton<GetAllUserHives>(
+      () => GetAllUserHives(
+        _getIt<HiveRepository>(),
+        _getIt<GetCurrentUserId>(),
+      ),
+    );
+
     // BLoC
     _getIt.registerFactory<HiveBloc>(
       () => HiveBloc(
@@ -71,6 +79,9 @@ class HiveInjection {
 
   /// Récupère une instance du use case GetHiveById
   static GetHiveById getHiveByIdUseCase() => _getIt<GetHiveById>();
+
+  /// Récupère une instance du use case GetAllUserHives
+  static GetAllUserHives getAllUserHivesUseCase() => _getIt<GetAllUserHives>();
 
   /// Supprime toutes les dépendances du module (pour les tests)
   static void resetHiveDependencies() {
@@ -91,6 +102,9 @@ class HiveInjection {
     }
     if (_getIt.isRegistered<GetHiveById>()) {
       _getIt.unregister<GetHiveById>();
+    }
+    if (_getIt.isRegistered<GetAllUserHives>()) {
+      _getIt.unregister<GetAllUserHives>();
     }
   }
 }

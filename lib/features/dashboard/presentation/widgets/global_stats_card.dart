@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../../sensor/domain/entities/apiary.dart';
+import '../../../apiary/domain/entities/apiary.dart';
+import '../../../hive/domain/entities/hive.dart';
+import '../../../../core/utils/text_utils.dart';
 
 class GlobalStatsCard extends StatelessWidget {
   final List<Apiary> apiaries;
+  final List<Hive> allHives;
 
   const GlobalStatsCard({
     super.key,
     required this.apiaries,
+    required this.allHives,
   });
 
   @override
@@ -60,7 +64,7 @@ class GlobalStatsCard extends StatelessWidget {
                 Expanded(
                   child: _StatItem(
                     value: '🏠 $totalHives',
-                    label: totalHives <= 1 ? 'Ruche' : 'Ruches',
+                    label: TextUtils.getHiveCountText(totalHives),
                     color: Colors.amber.shade700,
                   ),
                 ),
@@ -109,7 +113,7 @@ class GlobalStatsCard extends StatelessWidget {
   }
 
   int _getTotalHiveCount() {
-    return apiaries.fold(0, (total, apiary) => total + apiary.hiveIds.length);
+    return allHives.length;
   }
 
   int _getCriticalAlertCount() {

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../sensor/domain/entities/apiary.dart';
+import '../../../apiary/domain/entities/apiary.dart';
+import '../../../hive/domain/entities/hive.dart';
 import '../../../../core/models/apiary_status.dart';
 import '../../../../core/utils/text_utils.dart';
 
 class ApiariesSection extends StatelessWidget {
   final List<Apiary> apiaries;
+  final Map<String, List<Hive>> hivesByApiary;
 
   const ApiariesSection({
     super.key,
     required this.apiaries,
+    required this.hivesByApiary,
   });
 
   @override
@@ -38,7 +41,10 @@ class ApiariesSection extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Liste compacte des ruchers
-            ...apiaries.map((apiary) => _ApiaryCard(apiary: apiary)),
+            ...apiaries.map((apiary) => _ApiaryCard(
+                  apiary: apiary,
+                  hiveCount: hivesByApiary[apiary.id]?.length ?? 0,
+                )),
           ],
         ),
       ),
@@ -48,8 +54,12 @@ class ApiariesSection extends StatelessWidget {
 
 class _ApiaryCard extends StatelessWidget {
   final Apiary apiary;
+  final int hiveCount;
 
-  const _ApiaryCard({required this.apiary});
+  const _ApiaryCard({
+    required this.apiary,
+    required this.hiveCount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +99,7 @@ class _ApiaryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${TextUtils.getHiveCountText(apiary.hiveIds.length)} • ${apiary.location}',
+                      '${TextUtils.getHiveCountText(hiveCount)} • ${apiary.location}',
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontSize: 13,
@@ -117,7 +127,7 @@ class _ApiaryCard extends StatelessWidget {
 
   ApiaryStatus _getApiaryStatus(Apiary apiary) {
     // TODO: Implémenter la logique de calcul du statut réel
-    if (apiary.hiveIds.isEmpty) return ApiaryStatus.critical;
+    if (hiveCount == 0) return ApiaryStatus.critical;
     if (apiary.name.contains('Forêt')) return ApiaryStatus.warning;
     if (apiary.name.contains('Prairie')) return ApiaryStatus.critical;
     return ApiaryStatus.normal;

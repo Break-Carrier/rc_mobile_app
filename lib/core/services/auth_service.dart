@@ -1,208 +1,276 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../features/user_profile/domain/entities/user_profile_entity.dart';
-import '../../features/user_profile/domain/repositories/user_profile_repository.dart';
 import '../error/app_error.dart';
 
-/// Service d'authentification étendu avec gestion des profils et rôles
+/// Service d'authentification suivant les principes Clean Code
 ///
-/// Ce service fait le pont entre Firebase Auth et notre système de profils
-/// pour fournir une authentification complète avec gestion des rôles.
+/// Responsabilité unique : Gestion de l'authentification Firebase Auth
+/// Chaque méthode fait une seule chose et la fait bien
 class AuthService {
   final FirebaseAuth _firebaseAuth;
-  final UserProfileRepository _userProfileRepository;
 
-  const AuthService(
-    this._firebaseAuth,
-    this._userProfileRepository,
-  );
+  AuthService({
+    FirebaseAuth? firebaseAuth,
+  }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
 
-  /// Utilisateur actuellement connecté (Firebase)
-  User? get currentFirebaseUser => _firebaseAuth.currentUser;
-
-  /// Stream des changements d'état d'authentification
+  // === État d'authentification (Getters simples) ===
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
+  User? get currentUser => _firebaseAuth.currentUser;
+  bool get isAuthenticated => currentUser != null;
 
-  /// Récupère le profil complet de l'utilisateur connecté
-  ///
-  /// Combine les données Firebase Auth avec le profil étendu
-  Future<AuthResult<UserProfileEntity>> getCurrentUserProfile() async {
-    final firebaseUser = currentFirebaseUser;
-    if (firebaseUser == null) {
-      return const AuthFailure(
-        ValidationError(
-          message: 'Aucun utilisateur connecté',
-          code: 'NO_AUTHENTICATED_USER',
+  // === Connexion utilisateur existant ===
+  Future<AuthResult<User>> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    _validateEmailAndPassword(email, password);
+
+    try {
+      final credential = await _attemptSignIn(email, password);
+      return _handleSignInResult(credential);
+    } on FirebaseAuthException catch (e) {
+      return AuthFailure(_mapFirebaseAuthError(e));
+    } catch (e) {
+      return _handleUnexpectedError(e);
+    }
+  }
+
+  // === Création d'utilisateur par admin ===
+  Future<AuthResult<UserCreationData>> createUserByAdmin({
+    required String email,
+    required String fullName,
+    String? temporaryPassword,
+  }) async {
+    _validateUserCreationInputs(email, fullName);
+
+    try {
+      final password = _generateOrUsePassword(temporaryPassword);
+      final credential = await _createFirebaseUser(email, password);
+      await _updateUserDisplayName(credential.user!, fullName);
+
+      final creationData = _buildUserCreationData(credential.user!, password);
+      _logUserCreationInDevMode(creationData);
+
+      return AuthSuccess(creationData);
+    } on FirebaseAuthException catch (e) {
+      return AuthFailure(_mapFirebaseAuthError(e));
+    } catch (e) {
+      return _handleUnexpectedError(e);
+    }
+  }
+
+  // === Réinitialisation de mot de passe ===
+  Future<AuthResult<void>> resetPassword({
+    required String email,
+  }) async {
+    _validateEmail(email);
+
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+      return AuthSuccess(null);
+    } on FirebaseAuthException catch (e) {
+      return AuthFailure(_mapFirebaseAuthError(e));
+    } catch (e) {
+      return _handleUnexpectedError(e);
+    }
+  }
+
+  // === Changement de mot de passe ===
+  Future<AuthResult<void>> updatePassword({
+    required String newPassword,
+  }) async {
+    _validatePassword(newPassword);
+
+    try {
+      final user = _getCurrentUserOrThrow();
+      await user.updatePassword(newPassword);
+      return AuthSuccess(null);
+    } on FirebaseAuthException catch (e) {
+      return AuthFailure(_mapFirebaseAuthError(e));
+    } catch (e) {
+      return _handleUnexpectedError(e);
+    }
+  }
+
+  // === Déconnexion ===
+  Future<void> signOut() async {
+    await _firebaseAuth.signOut();
+  }
+
+  // === Validation d'entrée (Fail Fast) ===
+  void _validateEmailAndPassword(String email, String password) {
+    _validateEmail(email);
+    _validatePassword(password);
+  }
+
+  void _validateUserCreationInputs(String email, String fullName) {
+    _validateEmail(email);
+    _validateFullName(fullName);
+  }
+
+  void _validateEmail(String email) {
+    if (email.isEmpty) {
+      throw const ValidationError(
+        message: 'L\'email est requis',
+        code: 'EMPTY_EMAIL',
+      );
+    }
+
+    if (!_isValidEmailFormat(email)) {
+      throw const ValidationError(
+        message: 'Format d\'email invalide',
+        code: 'INVALID_EMAIL_FORMAT',
+      );
+    }
+  }
+
+  void _validatePassword(String password) {
+    if (password.isEmpty) {
+      throw const ValidationError(
+        message: 'Le mot de passe est requis',
+        code: 'EMPTY_PASSWORD',
+      );
+    }
+
+    if (password.length < 6) {
+      throw const ValidationError(
+        message: 'Le mot de passe doit contenir au moins 6 caractères',
+        code: 'WEAK_PASSWORD',
+      );
+    }
+  }
+
+  void _validateFullName(String fullName) {
+    if (fullName.isEmpty) {
+      throw const ValidationError(
+        message: 'Le nom complet est requis',
+        code: 'EMPTY_FULL_NAME',
+      );
+    }
+
+    if (fullName.length < 2) {
+      throw const ValidationError(
+        message: 'Le nom doit contenir au moins 2 caractères',
+        code: 'INVALID_FULL_NAME',
+      );
+    }
+  }
+
+  // === Opérations Firebase (Fonctions focalisées) ===
+  Future<UserCredential> _attemptSignIn(String email, String password) async {
+    return await _firebaseAuth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
+
+  Future<UserCredential> _createFirebaseUser(
+      String email, String password) async {
+    return await _firebaseAuth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
+
+  Future<void> _updateUserDisplayName(User user, String displayName) async {
+    await user.updateDisplayName(displayName);
+  }
+
+  // === Gestion des résultats ===
+  AuthResult<User> _handleSignInResult(UserCredential credential) {
+    if (credential.user == null) {
+      return AuthFailure(
+        const AuthenticationError(
+          message: 'Échec de l\'authentification',
+          code: 'SIGN_IN_FAILED',
         ),
       );
     }
 
-    final profileResult =
-        await _userProfileRepository.getUserProfile(firebaseUser.uid);
-
-    return switch (profileResult) {
-      UserProfileSuccess(data: final profile) => AuthSuccess(profile),
-      UserProfileFailure(error: final error) => AuthFailure(error),
-    };
+    return AuthSuccess(credential.user!);
   }
 
-  /// Vérifie si l'utilisateur connecté est administrateur
-  Future<bool> isCurrentUserAdmin() async {
-    final profileResult = await getCurrentUserProfile();
-    return switch (profileResult) {
-      AuthSuccess(data: final profile) => profile.isAdmin,
-      AuthFailure() => false,
-    };
+  AuthResult<T> _handleUnexpectedError<T>(dynamic error) {
+    return AuthFailure(
+      AuthenticationError(
+        message: 'Erreur inattendue: ${error.toString()}',
+        code: 'UNEXPECTED_ERROR',
+      ),
+    );
   }
 
-  /// Vérifie si l'utilisateur connecté est un apiculteur validé
-  Future<bool> isCurrentUserValidatedBeekeeper() async {
-    final profileResult = await getCurrentUserProfile();
-    return switch (profileResult) {
-      AuthSuccess(data: final profile) => profile.isValidatedBeekeeper,
-      AuthFailure() => false,
-    };
+  // === Utilitaires (Fonctions pures) ===
+  String _generateOrUsePassword(String? providedPassword) {
+    return providedPassword?.isNotEmpty == true
+        ? providedPassword!
+        : _generateSecureTemporaryPassword();
   }
 
-  /// Vérifie si l'utilisateur connecté peut accéder aux fonctionnalités d'apiculture
-  Future<bool> canAccessBeekeepingFeatures() async {
-    final profileResult = await getCurrentUserProfile();
-    return switch (profileResult) {
-      AuthSuccess(data: final profile) => profile.canAccessBeekeepingFeatures,
-      AuthFailure() => false,
-    };
+  String _generateSecureTemporaryPassword() {
+    const chars =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#%';
+    final random = DateTime.now().millisecondsSinceEpoch;
+
+    return List.generate(12, (index) {
+      return chars[(random + index) % chars.length];
+    }).join();
   }
 
-  /// Vérifie si l'utilisateur connecté peut gérer d'autres utilisateurs
-  Future<bool> canManageUsers() async {
-    final profileResult = await getCurrentUserProfile();
-    return switch (profileResult) {
-      AuthSuccess(data: final profile) => profile.canManageUsers,
-      AuthFailure() => false,
-    };
+  bool _isValidEmailFormat(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
-  /// Connexion avec email et mot de passe
-  ///
-  /// [email] - Adresse email
-  /// [password] - Mot de passe
-  ///
-  /// Retourne le profil complet en cas de succès
-  Future<AuthResult<UserProfileEntity>> signInWithEmailAndPassword(
-    String email,
-    String password,
-  ) async {
-    try {
-      final credential = await _firebaseAuth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
+  bool _isInDevelopmentMode() {
+    return currentUser?.email?.contains('test') ?? false;
+  }
+
+  User _getCurrentUserOrThrow() {
+    final user = currentUser;
+    if (user == null) {
+      throw const AuthenticationError(
+        message: 'Aucun utilisateur connecté',
+        code: 'NOT_AUTHENTICATED',
       );
-
-      if (credential.user == null) {
-        return const AuthFailure(
-          ValidationError(
-            message: 'Échec de la connexion',
-            code: 'SIGN_IN_FAILED',
-          ),
-        );
-      }
-
-      // Récupération du profil complet après connexion
-      return await getCurrentUserProfile();
-    } on FirebaseAuthException catch (e) {
-      return AuthFailure(_handleFirebaseAuthError(e));
-    } catch (e) {
-      return AuthFailure(ErrorHandler.handleError(e));
     }
+    return user;
   }
 
-  /// Déconnexion
-  Future<AuthResult<void>> signOut() async {
-    try {
-      await _firebaseAuth.signOut();
-      return const AuthSuccess(null);
-    } catch (e) {
-      return AuthFailure(ErrorHandler.handleError(e));
-    }
+  // === Construction d'objets ===
+  UserCreationData _buildUserCreationData(User user, String temporaryPassword) {
+    return UserCreationData(
+      user: user,
+      temporaryPassword: temporaryPassword,
+      createdAt: DateTime.now(),
+    );
   }
 
-  /// Crée un nouvel utilisateur avec profil (pour les administrateurs)
-  ///
-  /// [email] - Adresse email
-  /// [password] - Mot de passe temporaire
-  /// [profile] - Profil utilisateur à créer
-  ///
-  /// Cette méthode est réservée aux administrateurs pour créer de nouveaux apiculteurs
-  Future<AuthResult<UserProfileEntity>> createUserWithProfile(
-    String email,
-    String password,
-    UserProfileEntity profile,
-  ) async {
-    try {
-      // Vérification que l'utilisateur actuel est admin
-      final isAdmin = await isCurrentUserAdmin();
-      if (!isAdmin) {
-        return const AuthFailure(
-          ValidationError(
-            message:
-                'Seuls les administrateurs peuvent créer de nouveaux utilisateurs',
-            code: 'INSUFFICIENT_PERMISSIONS',
-          ),
-        );
-      }
+  // === Logging (Side effect isolé) ===
+  void _logUserCreationInDevMode(UserCreationData data) {
+    if (!_isInDevelopmentMode()) return;
 
-      // Création du compte Firebase
-      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      if (credential.user == null) {
-        return const AuthFailure(
-          ValidationError(
-            message: 'Échec de la création du compte',
-            code: 'ACCOUNT_CREATION_FAILED',
-          ),
-        );
-      }
-
-      // Création du profil utilisateur avec l'UID Firebase
-      final profileWithId = profile.copyWith(userId: credential.user!.uid);
-      final createResult =
-          await _userProfileRepository.createUserProfile(profileWithId);
-
-      return switch (createResult) {
-        UserProfileSuccess(data: final createdProfile) =>
-          AuthSuccess(createdProfile),
-        UserProfileFailure(error: final error) => AuthFailure(error),
-      };
-    } on FirebaseAuthException catch (e) {
-      return AuthFailure(_handleFirebaseAuthError(e));
-    } catch (e) {
-      return AuthFailure(ErrorHandler.handleError(e));
-    }
+    print('''
+📧 COMPTE CRÉÉ EN MODE DÉVELOPPEMENT :
+-----------------------------------
+Email: ${data.user.email}
+Mot de passe temporaire: ${data.temporaryPassword}
+Nom: ${data.user.displayName}
+UID: ${data.user.uid}
+-----------------------------------
+    ''');
   }
 
-  /// Gère les erreurs spécifiques à Firebase Auth
-  AppError _handleFirebaseAuthError(FirebaseAuthException e) {
+  // === Mappage d'erreurs (Fonction pure) ===
+  AppError _mapFirebaseAuthError(FirebaseAuthException e) {
     return switch (e.code) {
-      'user-not-found' => const ValidationError(
-          message: 'Aucun utilisateur trouvé avec cette adresse email',
+      'user-not-found' => const AuthenticationError(
+          message: 'Aucun utilisateur trouvé avec cet email',
           code: 'USER_NOT_FOUND',
         ),
-      'wrong-password' => const ValidationError(
+      'wrong-password' => const AuthenticationError(
           message: 'Mot de passe incorrect',
           code: 'WRONG_PASSWORD',
         ),
-      'user-disabled' => const ValidationError(
-          message: 'Ce compte utilisateur a été désactivé',
-          code: 'USER_DISABLED',
-        ),
-      'too-many-requests' => const ValidationError(
-          message: 'Trop de tentatives de connexion. Réessayez plus tard',
-          code: 'TOO_MANY_REQUESTS',
-        ),
       'email-already-in-use' => const ValidationError(
-          message: 'Cette adresse email est déjà utilisée',
+          message: 'Cet email est déjà utilisé',
           code: 'EMAIL_ALREADY_IN_USE',
         ),
       'weak-password' => const ValidationError(
@@ -210,31 +278,50 @@ class AuthService {
           code: 'WEAK_PASSWORD',
         ),
       'invalid-email' => const ValidationError(
-          message: 'Format d\'adresse email invalide',
+          message: 'Format d\'email invalide',
           code: 'INVALID_EMAIL',
         ),
-      _ => FirebaseError(
-          message: 'Erreur d\'authentification: ${e.message}',
+      'too-many-requests' => const NetworkError(
+          message: 'Trop de tentatives. Réessayez plus tard',
+          code: 'TOO_MANY_REQUESTS',
+        ),
+      _ => AuthenticationError(
+          message: e.message ?? 'Erreur d\'authentification',
           code: e.code,
-          originalError: e,
         ),
     };
   }
 }
 
-/// Résultat d'une opération d'authentification
-sealed class AuthResult<T> {
-  const AuthResult();
+// === Value Objects (Clean Architecture) ===
+
+/// Données de création d'utilisateur (Value Object)
+class UserCreationData {
+  final User user;
+  final String temporaryPassword;
+  final DateTime createdAt;
+
+  const UserCreationData({
+    required this.user,
+    required this.temporaryPassword,
+    required this.createdAt,
+  });
+
+  String get email => user.email ?? '';
+  String get fullName => user.displayName ?? '';
+  String get userId => user.uid;
 }
 
-/// Succès d'une opération d'authentification
+// === Result Types (Type Safety) ===
+
+sealed class AuthResult<T> {}
+
 class AuthSuccess<T> extends AuthResult<T> {
   final T data;
-  const AuthSuccess(this.data);
+  AuthSuccess(this.data);
 }
 
-/// Échec d'une opération d'authentification
 class AuthFailure<T> extends AuthResult<T> {
   final AppError error;
-  const AuthFailure(this.error);
+  AuthFailure(this.error);
 }

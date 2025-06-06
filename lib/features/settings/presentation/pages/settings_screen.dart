@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../auth/presentation/bloc/auth_navigation_bloc.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
 
 /// Écran des paramètres de l'application
 class SettingsScreen extends StatelessWidget {
@@ -26,9 +27,7 @@ class SettingsScreen extends StatelessWidget {
               subtitle: 'Se déconnecter de l\'application',
               textColor: Colors.red,
               onTap: () {
-                context.read<AuthNavigationBloc>().add(
-                      const ShowLogoutDialogRequested(),
-                    );
+                _showLogoutDialog(context);
               },
             ),
           ]),
@@ -43,6 +42,7 @@ class SettingsScreen extends StatelessWidget {
               subtitle: 'Recevoir des alertes en temps réel',
               trailing: Switch(
                 value: true, // TODO: Connecter à l'état réel
+                activeColor: Colors.green,
                 onChanged: (value) {
                   // TODO: Implémenter la logique
                 },
@@ -114,12 +114,62 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// Affiche le dialogue de confirmation de déconnexion
+  void _showLogoutDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.logout, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Déconnexion'),
+            ],
+          ),
+          content: const Text(
+            'Êtes-vous sûr de vouloir vous déconnecter de l\'application ?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                // Déconnexion via AuthBloc
+                context.read<AuthBloc>().add(const SignOutRequested());
+
+                // Message de confirmation
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Déconnexion en cours...'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Se déconnecter'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildSection(String title, List<Widget> children) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-            title,
+          title,
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -153,4 +203,3 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
- 

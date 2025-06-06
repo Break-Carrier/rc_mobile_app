@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../sensor/domain/entities/apiary.dart';
 import '../../../../core/models/apiary_status.dart';
+import '../../../../core/utils/text_utils.dart';
 
 class ApiariesSection extends StatelessWidget {
   final List<Apiary> apiaries;
@@ -88,7 +89,7 @@ class _ApiaryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${apiary.hiveIds.length} ruches • ${apiary.location}',
+                      '${TextUtils.getHiveCountText(apiary.hiveIds.length)} • ${apiary.location}',
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontSize: 13,

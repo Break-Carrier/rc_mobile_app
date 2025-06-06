@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../sensor/domain/entities/hive.dart';
 import '../../../../core/models/hive_status.dart';
 import '../../../apiary/domain/bloc/hives_bloc.dart';
+import '../../../../core/utils/text_utils.dart';
 
 class HivesScreen extends StatelessWidget {
   final String apiaryId;
@@ -228,7 +229,7 @@ class _LoadedContent extends StatelessWidget {
                           ),
                           const SizedBox(width: 16),
                           Text(
-                            '• $hiveCount ruches',
+                            '• ${TextUtils.getHiveCountText(hiveCount)}',
                             style: TextStyle(
                               color: Colors.green.shade700,
                               fontWeight: FontWeight.w600,
@@ -537,7 +538,7 @@ class _LoadedContent extends StatelessWidget {
                         size: 48, color: Colors.grey.shade400),
                     const SizedBox(height: 8),
                     Text(
-                      'Graphique comparatif des ${state.hives.length} ruches',
+                      'Graphique comparatif des ${TextUtils.getHiveCountText(state.hives.length)}',
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontWeight: FontWeight.w500,

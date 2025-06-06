@@ -284,7 +284,7 @@ class _ApiaryDetailView extends StatelessWidget {
                 children: [
                   _StatItem(
                     icon: Icons.widgets_outlined,
-                    label: 'Ruches',
+                    label: apiary.hiveCount <= 1 ? 'Ruche' : 'Ruches',
                     value: '${apiary.hiveCount}',
                     color: Theme.of(context).colorScheme.secondary,
                   ),

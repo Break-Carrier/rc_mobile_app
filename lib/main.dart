@@ -6,14 +6,13 @@ import 'core/utils/env_config.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/factories/service_factory.dart';
-import 'core/navigation/navigation_service.dart';
+import 'core/routes/app_router.dart';
 
 // Imports pour l'authentification
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/bloc/auth_navigation_bloc.dart';
 import 'features/auth/di/auth_injection.dart';
-import 'features/auth/presentation/widgets/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +40,8 @@ class MyApp extends StatelessWidget {
       providers: [
         // Fournisseur BLoC d'authentification
         BlocProvider<AuthBloc>(
-          create: (context) => AuthInjection.getAuthBloc(),
+          create: (context) =>
+              AuthInjection.getAuthBloc()..add(const AuthCheckRequested()),
         ),
 
         // Fournisseur BLoC de navigation d'authentification
@@ -49,11 +49,11 @@ class MyApp extends StatelessWidget {
           create: (context) => AuthInjection.getAuthNavigationBloc(),
         ),
       ],
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'Ruche Connectée',
         theme: AppTheme.lightTheme,
         debugShowCheckedModeBanner: false,
-        navigatorKey: NavigationServiceImpl.navigatorKey,
+        routerConfig: AppRouter.router,
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
@@ -62,7 +62,6 @@ class MyApp extends StatelessWidget {
         supportedLocales: const [
           Locale('fr', ''),
         ],
-        home: const AuthWrapper(),
       ),
     );
   }

@@ -67,7 +67,7 @@ class AdminRoleBloc extends Bloc<AdminRoleEvent, AdminRoleState> {
 
       if (result is AdminRoleFailure) {
         emit(AdminRoleError(
-          message: (result as AdminRoleFailure).error.message,
+          message: (result).error.message,
         ));
         return;
       }
@@ -102,7 +102,7 @@ class AdminRoleBloc extends Bloc<AdminRoleEvent, AdminRoleState> {
 
       if (result is AdminRoleFailure) {
         emit(AdminRoleError(
-          message: (result as AdminRoleFailure).error.message,
+          message: (result).error.message,
         ));
         return;
       }
@@ -136,7 +136,7 @@ class AdminRoleBloc extends Bloc<AdminRoleEvent, AdminRoleState> {
 
       if (result is AdminRoleFailure) {
         emit(AdminRoleError(
-          message: (result as AdminRoleFailure).error.message,
+          message: (result).error.message,
         ));
         return;
       }

@@ -198,7 +198,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
 
       final querySnapshot = await query.get();
       final profiles = querySnapshot.docs
-          .map((doc) => _mapDocumentToUserProfile(doc.id, doc.data()))
+          .map((doc) => _mapDocumentToUserProfile(doc.id, doc.data() as Map<String, dynamic>))
           .toList();
 
       return UserProfileSuccess(profiles);
@@ -486,7 +486,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
 
       final querySnapshot = await query.get();
       final profiles = querySnapshot.docs
-          .map((doc) => _mapDocumentToUserProfile(doc.id, doc.data()))
+          .map((doc) => _mapDocumentToUserProfile(doc.id, doc.data() as Map<String, dynamic>))
           .toList();
 
       return UserProfileSuccess(profiles);
@@ -770,7 +770,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
 
       final querySnapshot = await query.get();
       final allProfiles = querySnapshot.docs
-          .map((doc) => _mapDocumentToUserProfile(doc.id, doc.data()))
+          .map((doc) => _mapDocumentToUserProfile(doc.id, doc.data() as Map<String, dynamic>))
           .toList();
 
       // Filtrage local par terme de recherche

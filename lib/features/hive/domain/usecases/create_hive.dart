@@ -1,4 +1,3 @@
-import '../../data/models/hive_model.dart';
 import '../entities/hive.dart';
 import '../repositories/hive_repository.dart';
 import '../../../apiary/domain/repositories/apiary_repository.dart';

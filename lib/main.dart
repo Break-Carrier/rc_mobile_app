@@ -14,6 +14,10 @@ import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/auth/presentation/bloc/auth_navigation_bloc.dart';
 import 'features/auth/di/auth_injection.dart';
 
+// Imports pour les dépendances
+import 'features/user_profile/di/user_profile_injection.dart';
+import 'features/admin/di/admin_injection.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -27,6 +31,10 @@ void main() async {
 
   // Initialiser les services optimisés
   await ServiceFactory.initializeServices();
+
+  // Initialiser les dépendances
+  UserProfileInjection.setupUserProfileDependencies();
+  AdminInjection.setupAdminDependencies();
 
   runApp(const MyApp());
 }

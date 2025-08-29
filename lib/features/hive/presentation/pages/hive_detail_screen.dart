@@ -192,7 +192,7 @@ class _HiveStatusCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: needsAttention
-              ? Theme.of(context).colorScheme.error.withOpacity(0.3)
+              ? Theme.of(context).colorScheme.error.withValues(alpha: 0.3)
               : Theme.of(context).colorScheme.outlineVariant,
         ),
       ),

@@ -52,6 +52,24 @@ class ValidationError extends AppError {
   });
 }
 
+/// Erreur d'authentification
+class AuthenticationError extends AppError {
+  const AuthenticationError({
+    super.message = 'Erreur d\'authentification',
+    super.code = 'AUTHENTICATION_ERROR',
+    super.originalError,
+  });
+}
+
+/// Erreur de base de données
+class DatabaseError extends AppError {
+  const DatabaseError({
+    super.message = 'Erreur de base de données',
+    super.code = 'DATABASE_ERROR',
+    super.originalError,
+  });
+}
+
 /// Erreur de Firebase
 class FirebaseError extends AppError {
   const FirebaseError({
@@ -102,6 +120,14 @@ class ErrorHandler {
       return DataNotFoundError(originalError: error);
     }
 
+    if (errorString.contains('auth')) {
+      return AuthenticationError(originalError: error);
+    }
+
+    if (errorString.contains('database')) {
+      return DatabaseError(originalError: error);
+    }
+
     if (errorString.contains('firebase')) {
       return FirebaseError(originalError: error);
     }
@@ -119,6 +145,9 @@ class ErrorHandler {
       TimeoutError _ => 'La requête a pris trop de temps. Veuillez réessayer.',
       DataNotFoundError _ => 'Les données demandées sont introuvables.',
       ValidationError _ => 'Les données saisies ne sont pas valides.',
+      AuthenticationError _ =>
+        'Erreur d\'authentification. Vérifiez vos identifiants.',
+      DatabaseError _ => 'Erreur de base de données. Contactez le support.',
       FirebaseError _ => 'Erreur de connexion au serveur. Réessayez plus tard.',
       _ => error.message,
     };

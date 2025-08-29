@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../features/sensor/domain/entities/sensor_reading.dart';
 import '../../features/sensor/domain/entities/current_state.dart';
 

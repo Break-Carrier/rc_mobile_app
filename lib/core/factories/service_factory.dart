@@ -9,6 +9,8 @@ import '../../features/sensor/domain/entities/time_filter.dart';
 import '../../features/apiary/data/injection/apiary_injection.dart';
 import '../../features/hive/data/injection/hive_injection.dart';
 import '../../features/auth/di/auth_injection.dart';
+import '../../features/user_profile/di/user_profile_injection.dart';
+import '../../features/admin/di/admin_injection.dart';
 import '../../features/auth/domain/usecases/get_auth_state.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/data/datasources/auth_remote_data_source.dart';
@@ -33,7 +35,7 @@ class ServiceFactory {
     return _firebaseService!;
   }
 
-  /// Service CurrentState avec Stream<CurrentState?>
+  /// Service CurrentState avec Stream CurrentState
   static CurrentStateService get currentStateService {
     _currentStateService ??= CurrentStateService(
       database: firebaseService.database,
@@ -80,12 +82,19 @@ class ServiceFactory {
       // Initialiser les modules d'authentification d'abord
       AuthInjection.setupAuthDependencies();
 
+      logger.d('👤 Initialisation des dépendances de profil utilisateur...');
+      // Initialiser UserProfile AVANT Admin (car Admin dépend de UserProfile)
+      UserProfileInjection.setupUserProfileDependencies();
+
       logger.d('🏠 Initialisation des dépendances d\'apiary...');
       // Initialiser les autres modules
       ApiaryInjection.setupApiaryDependencies();
 
       logger.d('🐝 Initialisation des dépendances de ruche...');
       HiveInjection.setupHiveDependencies();
+
+      logger.d('🔐 Initialisation des dépendances d\'administration...');
+      AdminInjection.setupAdminDependencies();
 
       logger.d('⚡ Initialisation du coordinateur...');
       final coordinator = getHiveServiceCoordinator();
@@ -158,9 +167,13 @@ class ServiceFactory {
     _coordinator?.dispose();
     ApiaryInjection.resetApiaryDependencies();
     HiveInjection.resetHiveDependencies();
+    AdminInjection.resetAdminDependencies();
 
     // Reset auth dependencies
     AuthInjection.resetAuthDependencies();
+
+    // Reset user profile dependencies
+    UserProfileInjection.resetUserProfileDependencies();
 
     _firebaseService = null;
     _currentStateService = null;

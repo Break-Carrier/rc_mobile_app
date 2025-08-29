@@ -27,6 +27,8 @@ import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/di/auth_injection.dart';
 import '../../features/admin/di/admin_injection.dart';
+import '../../features/alert/di/alert_injection.dart';
+import '../../features/alert/presentation/pages/alerts_screen.dart';
 
 /// Notifier pour écouter les changements d'état d'authentification
 class AuthChangeNotifier extends ChangeNotifier {
@@ -126,6 +128,15 @@ class AppRouter {
               final hiveId = state.pathParameters['id']!;
               return _HiveDetailWrapper(hiveId: hiveId);
             },
+          ),
+          // Route des alertes
+          GoRoute(
+            path: '/alerts',
+            name: 'alerts',
+            builder: (context, state) => BlocProvider(
+              create: (context) => AlertInjection.getAlertBloc(),
+              child: const AlertsScreen(),
+            ),
           ),
           // Route des paramètres
           GoRoute(

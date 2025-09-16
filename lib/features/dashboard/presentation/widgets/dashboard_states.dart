@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../domain/bloc/dashboard_bloc.dart';
 
 class DashboardLoadingWidget extends StatelessWidget {
@@ -108,10 +109,8 @@ class NoApiariesWidget extends StatelessWidget {
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: () {
-                // TODO: Navigation vers ajout rucher
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Fonction à implémenter')),
-                );
+                // Rediriger vers la page des ruchers avec ouverture automatique du dialogue
+                context.go('/apiaries?autoCreate=true');
               },
               icon: const Icon(Icons.add),
               label: const Text('Ajouter un rucher'),

@@ -100,7 +100,11 @@ class AppRouter {
           GoRoute(
             path: '/apiaries',
             name: 'apiaries',
-            builder: (context, state) => const ApiariesScreen(),
+            builder: (context, state) {
+              final autoCreate =
+                  state.uri.queryParameters['autoCreate'] == 'true';
+              return ApiariesScreen(autoOpenCreateDialog: autoCreate);
+            },
           ),
           // Route unifiée d'un rucher (informations + statistiques + ruches)
           GoRoute(

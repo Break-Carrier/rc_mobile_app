@@ -13,20 +13,43 @@ import '../widgets/create_apiary_dialog.dart';
 
 /// Écran principal de gestion des ruchers
 class ApiariesScreen extends StatelessWidget {
-  const ApiariesScreen({super.key});
+  final bool autoOpenCreateDialog;
+
+  const ApiariesScreen({
+    super.key,
+    this.autoOpenCreateDialog = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) =>
           ApiaryInjection.getApiaryBloc()..add(const StartWatchingApiaries()),
-      child: const _ApiariesView(),
+      child: _ApiariesView(autoOpenCreateDialog: autoOpenCreateDialog),
     );
   }
 }
 
-class _ApiariesView extends StatelessWidget {
-  const _ApiariesView();
+class _ApiariesView extends StatefulWidget {
+  final bool autoOpenCreateDialog;
+
+  const _ApiariesView({this.autoOpenCreateDialog = false});
+
+  @override
+  State<_ApiariesView> createState() => _ApiariesViewState();
+}
+
+class _ApiariesViewState extends State<_ApiariesView> {
+  @override
+  void initState() {
+    super.initState();
+    // Ouvrir automatiquement le dialogue si demandé
+    if (widget.autoOpenCreateDialog) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showCreateApiaryDialog(context);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

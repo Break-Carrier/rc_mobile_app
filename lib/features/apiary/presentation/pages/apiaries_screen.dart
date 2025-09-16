@@ -206,7 +206,8 @@ class _BuildApiariesList extends StatelessWidget {
   }
 
   void _navigateToApiaryDetail(BuildContext context, dynamic apiary) {
-    context.go('/apiary/${apiary.id}/detail');
+    // Passer les données du rucher via les paramètres de route
+    context.go('/apiary/${apiary.id}', extra: apiary);
   }
 
   void _showEditApiaryDialog(BuildContext context, dynamic apiary) {

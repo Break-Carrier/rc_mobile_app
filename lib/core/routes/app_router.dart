@@ -13,11 +13,11 @@ import '../../features/admin/presentation/pages/admin_management_screen.dart'
 // import '../../features/admin/presentation/pages/pending_validations_screen.dart';
 import '../../features/apiary/presentation/pages/apiaries_screen.dart';
 import '../../features/apiary/presentation/pages/apiary_detail_screen.dart';
+import '../../features/apiary/presentation/pages/unified_apiary_screen.dart';
 import '../../features/apiary/data/injection/apiary_injection.dart';
 import '../../features/apiary/presentation/bloc/apiary_bloc.dart';
 import '../../features/apiary/presentation/bloc/apiary_event.dart';
 import '../../features/apiary/presentation/bloc/apiary_state.dart';
-import '../../features/hive/presentation/pages/hives_screen.dart';
 import '../../features/hive/presentation/pages/hive_detail_screen.dart';
 import '../../features/hive/data/injection/hive_injection.dart';
 import '../../features/hive/domain/usecases/get_hive_by_id.dart';
@@ -102,13 +102,14 @@ class AppRouter {
             name: 'apiaries',
             builder: (context, state) => const ApiariesScreen(),
           ),
-          // Route des ruches d'un rucher
+          // Route unifiée d'un rucher (informations + statistiques + ruches)
           GoRoute(
             path: '/apiary/:id',
             name: 'apiary_details',
             builder: (context, state) {
               final apiaryId = state.pathParameters['id']!;
-              return HivesScreen(apiaryId: apiaryId);
+              final apiary = state.extra as dynamic;
+              return UnifiedApiaryScreen(apiaryId: apiaryId, apiary: apiary);
             },
           ),
           // Route du détail d'un rucher

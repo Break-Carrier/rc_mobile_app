@@ -17,6 +17,7 @@ import 'features/auth/di/auth_injection.dart';
 // Imports pour les dépendances
 import 'features/user_profile/di/user_profile_injection.dart';
 import 'features/admin/di/admin_injection.dart';
+import 'features/alert/di/alert_injection.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +36,7 @@ void main() async {
   // Initialiser les dépendances
   UserProfileInjection.setupUserProfileDependencies();
   AdminInjection.setupAdminDependencies();
+  AlertInjection.setupAlertDependencies();
 
   runApp(const MyApp());
 }

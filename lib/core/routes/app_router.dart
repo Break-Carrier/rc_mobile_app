@@ -13,11 +13,11 @@ import '../../features/admin/presentation/pages/admin_management_screen.dart'
 // import '../../features/admin/presentation/pages/pending_validations_screen.dart';
 import '../../features/apiary/presentation/pages/apiaries_screen.dart';
 import '../../features/apiary/presentation/pages/apiary_detail_screen.dart';
+import '../../features/apiary/presentation/pages/unified_apiary_screen.dart';
 import '../../features/apiary/data/injection/apiary_injection.dart';
 import '../../features/apiary/presentation/bloc/apiary_bloc.dart';
 import '../../features/apiary/presentation/bloc/apiary_event.dart';
 import '../../features/apiary/presentation/bloc/apiary_state.dart';
-import '../../features/hive/presentation/pages/hives_screen.dart';
 import '../../features/hive/presentation/pages/hive_detail_screen.dart';
 import '../../features/hive/data/injection/hive_injection.dart';
 import '../../features/hive/domain/usecases/get_hive_by_id.dart';
@@ -27,6 +27,8 @@ import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/di/auth_injection.dart';
 import '../../features/admin/di/admin_injection.dart';
+import '../../features/alert/di/alert_injection.dart';
+import '../../features/alert/presentation/pages/alerts_screen.dart';
 
 /// Notifier pour écouter les changements d'état d'authentification
 class AuthChangeNotifier extends ChangeNotifier {
@@ -98,15 +100,20 @@ class AppRouter {
           GoRoute(
             path: '/apiaries',
             name: 'apiaries',
-            builder: (context, state) => const ApiariesScreen(),
+            builder: (context, state) {
+              final autoCreate =
+                  state.uri.queryParameters['autoCreate'] == 'true';
+              return ApiariesScreen(autoOpenCreateDialog: autoCreate);
+            },
           ),
-          // Route des ruches d'un rucher
+          // Route unifiée d'un rucher (informations + statistiques + ruches)
           GoRoute(
             path: '/apiary/:id',
             name: 'apiary_details',
             builder: (context, state) {
               final apiaryId = state.pathParameters['id']!;
-              return HivesScreen(apiaryId: apiaryId);
+              final apiary = state.extra as dynamic;
+              return UnifiedApiaryScreen(apiaryId: apiaryId, apiary: apiary);
             },
           ),
           // Route du détail d'un rucher
@@ -126,6 +133,15 @@ class AppRouter {
               final hiveId = state.pathParameters['id']!;
               return _HiveDetailWrapper(hiveId: hiveId);
             },
+          ),
+          // Route des alertes
+          GoRoute(
+            path: '/alerts',
+            name: 'alerts',
+            builder: (context, state) => BlocProvider(
+              create: (context) => AlertInjection.getAlertBloc(),
+              child: const AlertsScreen(),
+            ),
           ),
           // Route des paramètres
           GoRoute(

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../features/auth/presentation/bloc/auth_bloc.dart';
 import '../features/auth/presentation/bloc/auth_state.dart';
+import '../features/alert/data/services/alert_test_service.dart';
+import '../core/config/app_config.dart';
 
 /// Écran de debug pour afficher les informations système
 ///
@@ -29,6 +32,8 @@ class DebugInfoScreen extends StatelessWidget {
                 _buildAuthInfoCard(context, authState),
                 const SizedBox(height: 16),
                 _buildQuickActionsCard(context, authState),
+                const SizedBox(height: 16),
+                _buildAlertTestCard(context),
                 const SizedBox(height: 16),
                 _buildInstructionsCard(context),
               ],
@@ -235,6 +240,134 @@ class DebugInfoScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildAlertTestCard(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '🧪 Test des Alertes',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Ajoutez des alertes de test pour vérifier le système d\'alertes :',
+              style: TextStyle(height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _addTestAlerts(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Ajouter Alertes Test'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _clearTestAlerts(context),
+                    icon: const Icon(Icons.clear),
+                    label: const Text('Nettoyer'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade100,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.blue.shade600),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info, color: Colors.blue.shade800),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Les alertes de test seront ajoutées dans Firebase et visibles sur le dashboard.',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addTestAlerts(BuildContext context) async {
+    try {
+      final testService = AlertTestService(
+        database: FirebaseDatabase.instance,
+        basePath: AppConfig.firebaseBasePath,
+      );
+
+      await testService.addTestAlerts();
+
+      if (context.mounted) {
+        _showSnackBar(
+          context,
+          '✅ Alertes de test ajoutées ! Vérifiez le dashboard.',
+          Colors.green,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _showSnackBar(
+          context,
+          '❌ Erreur lors de l\'ajout des alertes de test: $e',
+          Colors.red,
+        );
+      }
+    }
+  }
+
+  Future<void> _clearTestAlerts(BuildContext context) async {
+    try {
+      final testService = AlertTestService(
+        database: FirebaseDatabase.instance,
+        basePath: AppConfig.firebaseBasePath,
+      );
+
+      await testService.clearTestAlerts();
+
+      if (context.mounted) {
+        _showSnackBar(
+          context,
+          '🧹 Alertes de test supprimées !',
+          Colors.orange,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _showSnackBar(
+          context,
+          '❌ Erreur lors de la suppression des alertes de test: $e',
+          Colors.red,
+        );
+      }
+    }
   }
 
   Widget _buildInfoRow(

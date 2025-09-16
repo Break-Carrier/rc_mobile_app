@@ -134,6 +134,6 @@ class _ApiaryCard extends StatelessWidget {
   }
 
   void _navigateToApiary(BuildContext context, Apiary apiary) {
-    context.go('/apiary/${apiary.id}/hives');
+    context.go('/apiary/${apiary.id}', extra: apiary);
   }
 }

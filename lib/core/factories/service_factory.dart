@@ -201,6 +201,11 @@ class FirebaseService {
     await database.ref('$basePath/$path').update(data);
   }
 
+  Future<dynamic> getData(String path) async {
+    final snapshot = await database.ref('$basePath/$path').once();
+    return snapshot.snapshot.value;
+  }
+
   Future<bool> checkDirectConnection() async {
     try {
       await database.ref('.info/connected').once();
@@ -307,11 +312,11 @@ class SensorReadingService {
         readings.add(SensorReading(
           id: key,
           hiveId: _currentHiveId!,
-          temperature: (readingData['temperature'] as num?)?.toDouble(),
-          humidity: (readingData['humidity'] as num?)?.toDouble(),
-          weight: (readingData['weight'] as num?)?.toDouble(),
+          temperature: (readingData['temperature'] as num?)?.toDouble() ?? 0.0,
+          humidity: (readingData['humidity'] as num?)?.toDouble() ?? 0.0,
           timestamp: DateTime.fromMillisecondsSinceEpoch(
-            readingData['timestamp'] as int,
+            readingData['timestamp'] as int? ??
+                DateTime.now().millisecondsSinceEpoch,
           ),
           metadata: readingData['metadata'] as Map<String, dynamic>?,
         ));

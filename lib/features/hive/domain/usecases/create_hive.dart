@@ -46,9 +46,6 @@ class CreateHive {
       apiaryId: params.apiaryId,
       ownerId: userId,
       description: params.description,
-      hiveType: params.hiveType,
-      material: params.material,
-      frameCount: params.frameCount,
       isActive: true,
       createdAt: DateTime.now(),
     );

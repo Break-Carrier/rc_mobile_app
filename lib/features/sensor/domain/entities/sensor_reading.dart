@@ -1,12 +1,12 @@
 import 'package:equatable/equatable.dart';
 
-/// Représente une lecture de capteur
+/// Représente une lecture de capteur simplifiée
+/// Utilisée pour l'historique des données de capteurs
 class SensorReading extends Equatable {
   final String id;
   final String hiveId;
-  final double? temperature;
-  final double? humidity;
-  final double? weight;
+  final double temperature;
+  final double humidity;
   final DateTime timestamp;
   final Map<String, dynamic>? metadata;
 
@@ -14,12 +14,25 @@ class SensorReading extends Equatable {
   const SensorReading({
     required this.id,
     required this.hiveId,
-    this.temperature,
-    this.humidity,
-    this.weight,
+    required this.temperature,
+    required this.humidity,
     required this.timestamp,
     this.metadata,
   });
+
+  /// Créer une instance depuis les données Firebase
+  factory SensorReading.fromFirebase(
+      Map<String, dynamic> data, String id, String hiveId) {
+    return SensorReading(
+      id: id,
+      hiveId: hiveId,
+      temperature: (data['temperature'] as num?)?.toDouble() ?? 0.0,
+      humidity: (data['humidity'] as num?)?.toDouble() ?? 0.0,
+      timestamp:
+          DateTime.now(), // Firebase ne stocke pas le timestamp pour l'instant
+      metadata: data,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -27,13 +40,12 @@ class SensorReading extends Equatable {
         hiveId,
         temperature,
         humidity,
-        weight,
         timestamp,
         metadata,
       ];
 
   @override
   String toString() {
-    return 'SensorReading(id: $id, hiveId: $hiveId, temperature: $temperature, humidity: $humidity, weight: $weight, timestamp: $timestamp)';
+    return 'SensorReading(id: $id, hiveId: $hiveId, temperature: ${temperature}°C, humidity: ${humidity}%, timestamp: $timestamp)';
   }
 }

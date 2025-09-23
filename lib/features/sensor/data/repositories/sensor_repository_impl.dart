@@ -6,13 +6,16 @@ import '../../domain/entities/sensor_reading.dart';
 import '../../domain/entities/threshold_event.dart';
 import '../../domain/entities/time_filter.dart';
 import '../../../../core/services/hive_service_coordinator.dart';
+import '../../../../core/factories/service_factory.dart';
 import '../../domain/repositories/sensor_repository.dart';
 
 /// Implémentation concrète du repository utilisant HiveServiceCoordinator
 class SensorRepositoryImpl implements ISensorRepository {
   final HiveServiceCoordinator _coordinator;
+  final FirebaseService _firebaseService;
 
-  SensorRepositoryImpl(this._coordinator);
+  SensorRepositoryImpl(this._coordinator)
+      : _firebaseService = ServiceFactory.firebaseService;
 
   @override
   Future<List<Apiary>> getApiaries() async {
@@ -27,7 +30,25 @@ class SensorRepositoryImpl implements ISensorRepository {
   @override
   Future<List<Hive>> getHivesForApiary(String apiaryId) async {
     try {
-      return _coordinator.getHivesForApiary(apiaryId);
+      await _firebaseService.initialize();
+
+      // Récupérer toutes les ruches depuis Firebase
+      final data = await _firebaseService.getData('hives');
+      if (data == null) return [];
+
+      final List<Hive> hives = [];
+
+      // Parcourir les données Firebase et créer les objets Hive
+      (data as Map<String, dynamic>).forEach((hiveId, hiveData) {
+        if (hiveData is Map<String, dynamic>) {
+          final hive = Hive.fromFirebase(hiveData, hiveId);
+          // Filtrer par apiaryId si nécessaire (pour l'instant on récupère toutes les ruches)
+          hives.add(hive);
+        }
+      });
+
+      debugPrint('✅ Repository: Retrieved ${hives.length} hives from Firebase');
+      return hives;
     } catch (e) {
       debugPrint('❌ Repository: Error getting hives for apiary $apiaryId: $e');
       return [];
@@ -37,17 +58,15 @@ class SensorRepositoryImpl implements ISensorRepository {
   @override
   Future<Hive?> getHiveById(String hiveId) async {
     try {
-      // Pour l'instant, on récupère toutes les ruches et on filtre
-      final apiaries = await _coordinator.getApiaries();
-      for (final apiary in apiaries) {
-        final hives = await _coordinator.getHivesForApiary(apiary.id);
-        for (final hive in hives) {
-          if (hive.id == hiveId) {
-            return hive;
-          }
-        }
-      }
-      return null;
+      await _firebaseService.initialize();
+
+      // Récupérer directement la ruche depuis Firebase
+      final data = await _firebaseService.getData('hives/$hiveId');
+      if (data == null) return null;
+
+      final hive = Hive.fromFirebase(data as Map<String, dynamic>, hiveId);
+      debugPrint('✅ Repository: Retrieved hive $hiveId from Firebase');
+      return hive;
     } catch (e) {
       debugPrint('❌ Repository: Error getting hive $hiveId: $e');
       return null;

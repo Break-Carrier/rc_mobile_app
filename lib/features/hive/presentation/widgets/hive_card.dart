@@ -93,22 +93,7 @@ class HiveCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  if (hive.hiveType != null) ...[
-                    Icon(
-                      Icons.home_work,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      hive.hiveType!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                    const Spacer(),
-                  ],
+                  const Spacer(),
                   if (onEdit != null)
                     IconButton(
                       onPressed: onEdit,

@@ -10,7 +10,6 @@ class MockData {
       hiveId: 'hive_1',
       temperature: 35.5,
       humidity: 60.0,
-      weight: 45.2,
       timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
     ),
     SensorReading(
@@ -18,7 +17,6 @@ class MockData {
       hiveId: 'hive_1',
       temperature: 35.8,
       humidity: 58.5,
-      weight: 45.3,
       timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
     ),
     SensorReading(
@@ -26,7 +24,6 @@ class MockData {
       hiveId: 'hive_1',
       temperature: 35.2,
       humidity: 62.0,
-      weight: 45.1,
       timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
     ),
     SensorReading(
@@ -42,7 +39,6 @@ class MockData {
       hiveId: 'hive_1',
       temperature: 35.6,
       humidity: 61.0,
-      weight: 45.0,
       timestamp: DateTime.now().subtract(const Duration(minutes: 25)),
     ),
     SensorReading(
@@ -50,7 +46,6 @@ class MockData {
       hiveId: 'hive_1',
       temperature: 35.3,
       humidity: 63.0,
-      weight: 44.9,
       timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
     ),
   ];
@@ -61,25 +56,25 @@ class MockData {
 
   /// Ruches échantillons
   static final List<Hive> _sampleHives = [
-      Hive(
+    Hive(
       id: 'hive_1',
-        name: 'Ruche Alpha',
+      name: 'Ruche Alpha',
       apiaryId: 'apiary_1',
       description: 'Ruche principale du rucher',
       createdAt: DateTime.now().subtract(const Duration(days: 30)),
       updatedAt: DateTime.now(),
-      ),
-      Hive(
+    ),
+    Hive(
       id: 'hive_2',
-        name: 'Ruche Beta',
+      name: 'Ruche Beta',
       apiaryId: 'apiary_1',
       description: 'Ruche secondaire',
       createdAt: DateTime.now().subtract(const Duration(days: 25)),
       updatedAt: DateTime.now(),
-      ),
-      Hive(
+    ),
+    Hive(
       id: 'hive_3',
-        name: 'Ruche Gamma',
+      name: 'Ruche Gamma',
       apiaryId: 'apiary_2',
       description: 'Nouvelle ruche',
       createdAt: DateTime.now().subtract(const Duration(days: 15)),
@@ -91,16 +86,16 @@ class MockData {
 
   /// Ruchers échantillons
   static final List<Apiary> _sampleApiaries = [
-      Apiary(
+    Apiary(
       id: 'apiary_1',
-        name: 'Rucher Principal',
+      name: 'Rucher Principal',
       location: 'Jardin du château',
       description: 'Le rucher principal avec nos meilleures ruches',
       createdAt: DateTime.now().subtract(const Duration(days: 60)),
       updatedAt: DateTime.now(),
       hiveIds: ['hive_1', 'hive_2'],
-      ),
-      Apiary(
+    ),
+    Apiary(
       id: 'apiary_2',
       name: 'Rucher Annexe',
       location: 'Prairie sud',

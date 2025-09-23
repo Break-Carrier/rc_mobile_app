@@ -27,21 +27,7 @@ class _CreateHiveDialogState extends State<CreateHiveDialog> {
   final _descriptionController = TextEditingController();
 
   bool _isEditing = false;
-  String _selectedHiveType = 'Dadant';
-  String _selectedMaterial = 'Bois';
-  int _frameCount = 10;
   bool _isActive = true;
-
-  final List<String> _hiveTypes = [
-    'Dadant',
-    'Langstroth',
-    'Voirnot',
-    'Warré',
-    'Top Bar',
-    'Autre'
-  ];
-
-  final List<String> _materials = ['Bois', 'Plastique', 'Polystyrène', 'Autre'];
 
   @override
   void initState() {
@@ -52,9 +38,6 @@ class _CreateHiveDialogState extends State<CreateHiveDialog> {
       final hive = widget.hive!;
       _nameController.text = hive.name;
       _descriptionController.text = hive.description ?? '';
-      _selectedHiveType = hive.hiveType ?? 'Dadant';
-      _selectedMaterial = hive.material ?? 'Bois';
-      _frameCount = hive.frameCount ?? 10;
       _isActive = hive.isActive;
     }
   }

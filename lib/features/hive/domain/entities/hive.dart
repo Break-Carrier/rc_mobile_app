@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../sensor/domain/entities/hive_sensor_data.dart';
 
 /// Entité Ruche suivant les principes Clean Architecture
 class Hive extends Equatable {
@@ -7,13 +8,11 @@ class Hive extends Equatable {
   final String apiaryId; // ID du rucher parent
   final String ownerId; // ID du propriétaire (Firebase Auth UID)
   final String? description;
-  final String? hiveType; // Type de ruche (Dadant, Langstroth, etc.)
-  final String? material; // Matériau (bois, plastique, etc.)
-  final int? frameCount; // Nombre de cadres
   final bool isActive; // Ruche active ou non
   final DateTime createdAt;
   final DateTime? updatedAt;
   final DateTime? lastInspection; // Dernière inspection
+  final HiveSensorData? sensorData; // Données des capteurs intégrées
   final Map<String, dynamic>? metadata; // Données supplémentaires
 
   const Hive({
@@ -22,15 +21,38 @@ class Hive extends Equatable {
     required this.apiaryId,
     required this.ownerId,
     this.description,
-    this.hiveType,
-    this.material,
-    this.frameCount,
     this.isActive = true,
     required this.createdAt,
     this.updatedAt,
     this.lastInspection,
+    this.sensorData,
     this.metadata,
   });
+
+  /// Créer une instance depuis les données Firebase
+  factory Hive.fromFirebase(Map<String, dynamic> data, String id) {
+    final sensorData = data['sensor'] != null
+        ? HiveSensorData.fromFirebase(data['sensor'] as Map<String, dynamic>)
+        : null;
+
+    return Hive(
+      id: id,
+      name: data['nom'] as String? ?? '',
+      apiaryId: data['rucherId'] as String? ?? '',
+      ownerId:
+          data['ownerId'] as String? ?? '', // À adapter selon votre structure
+      description: data['description'] as String?,
+      isActive: data['isActive'] as bool? ?? true,
+      createdAt:
+          DateTime.now(), // Firebase ne stocke pas ces dates pour l'instant
+      updatedAt: DateTime.now(),
+      lastInspection: data['lastInspection'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(data['lastInspection'] as int)
+          : null,
+      sensorData: sensorData,
+      metadata: data,
+    );
+  }
 
   /// Crée une copie avec des modifications
   Hive copyWith({
@@ -39,13 +61,11 @@ class Hive extends Equatable {
     String? apiaryId,
     String? ownerId,
     String? description,
-    String? hiveType,
-    String? material,
-    int? frameCount,
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? lastInspection,
+    HiveSensorData? sensorData,
     Map<String, dynamic>? metadata,
   }) {
     return Hive(
@@ -54,13 +74,11 @@ class Hive extends Equatable {
       apiaryId: apiaryId ?? this.apiaryId,
       ownerId: ownerId ?? this.ownerId,
       description: description ?? this.description,
-      hiveType: hiveType ?? this.hiveType,
-      material: material ?? this.material,
-      frameCount: frameCount ?? this.frameCount,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       lastInspection: lastInspection ?? this.lastInspection,
+      sensorData: sensorData ?? this.sensorData,
       metadata: metadata ?? this.metadata,
     );
   }
@@ -103,13 +121,11 @@ class Hive extends Equatable {
         apiaryId,
         ownerId,
         description,
-        hiveType,
-        material,
-        frameCount,
         isActive,
         createdAt,
         updatedAt,
         lastInspection,
+        sensorData,
         metadata,
       ];
 

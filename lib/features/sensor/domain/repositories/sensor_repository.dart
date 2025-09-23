@@ -1,4 +1,4 @@
-import '../entities/hive.dart';
+import '../../../hive/domain/entities/hive.dart';
 import '../entities/apiary.dart';
 import '../entities/current_state.dart';
 import '../entities/sensor_reading.dart';

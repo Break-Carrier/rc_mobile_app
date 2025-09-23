@@ -13,8 +13,6 @@ import '../../../hive/presentation/widgets/create_hive_dialog.dart';
 import '../../../alert/di/alert_injection.dart';
 import '../../../alert/presentation/bloc/alert_bloc.dart';
 import '../../domain/entities/apiary.dart';
-import '../../../../core/utils/text_utils.dart';
-import '../../../../core/models/hive_status.dart';
 
 /// Écran unifié d'un rucher : informations + statistiques + ruches
 class UnifiedApiaryScreen extends StatelessWidget {

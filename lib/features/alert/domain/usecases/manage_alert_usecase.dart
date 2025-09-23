@@ -1,4 +1,3 @@
-import '../../domain/entities/threshold_event.dart';
 import '../../domain/repositories/alert_repository_interface.dart';
 
 /// Use case pour gérer les alertes

@@ -32,11 +32,11 @@ class RealtimeDBConverter {
       readings.add(SensorReading(
         id: key,
         hiveId: hiveId,
-        temperature: (readingData['temperature'] as num?)?.toDouble(),
-        humidity: (readingData['humidity'] as num?)?.toDouble(),
-        weight: (readingData['weight'] as num?)?.toDouble(),
+        temperature: (readingData['temperature'] as num?)?.toDouble() ?? 0.0,
+        humidity: (readingData['humidity'] as num?)?.toDouble() ?? 0.0,
         timestamp: DateTime.fromMillisecondsSinceEpoch(
-          readingData['timestamp'] as int,
+          readingData['timestamp'] as int? ??
+              DateTime.now().millisecondsSinceEpoch,
         ),
         metadata: readingData['metadata'] as Map<String, dynamic>?,
       ));
@@ -51,7 +51,6 @@ class RealtimeDBConverter {
       'hive_id': reading.hiveId,
       'temperature': reading.temperature,
       'humidity': reading.humidity,
-      'weight': reading.weight,
       'timestamp': reading.timestamp.millisecondsSinceEpoch,
       'metadata': reading.metadata,
     };

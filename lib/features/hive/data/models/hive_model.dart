@@ -1,4 +1,5 @@
 import '../../domain/entities/hive.dart';
+import '../../../sensor/domain/entities/hive_sensor_data.dart';
 
 /// Modèle de données pour Firebase - Ruche
 class HiveModel extends Hive {
@@ -8,13 +9,11 @@ class HiveModel extends Hive {
     required super.apiaryId,
     required super.ownerId,
     super.description,
-    super.hiveType,
-    super.material,
-    super.frameCount,
     super.isActive,
     required super.createdAt,
     super.updatedAt,
     super.lastInspection,
+    super.sensorData,
     super.metadata,
   });
 
@@ -26,13 +25,11 @@ class HiveModel extends Hive {
       apiaryId: hive.apiaryId,
       ownerId: hive.ownerId,
       description: hive.description,
-      hiveType: hive.hiveType,
-      material: hive.material,
-      frameCount: hive.frameCount,
       isActive: hive.isActive,
       createdAt: hive.createdAt,
       updatedAt: hive.updatedAt,
       lastInspection: hive.lastInspection,
+      sensorData: hive.sensorData,
       metadata: hive.metadata,
     );
   }
@@ -45,9 +42,6 @@ class HiveModel extends Hive {
       apiaryId: map['apiaryId'] as String? ?? '',
       ownerId: map['ownerId'] as String? ?? '',
       description: map['description'] as String?,
-      hiveType: map['hiveType'] as String?,
-      material: map['material'] as String?,
-      frameCount: map['frameCount'] as int?,
       isActive: map['isActive'] as bool? ?? true,
       createdAt: map['createdAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int)
@@ -57,6 +51,9 @@ class HiveModel extends Hive {
           : null,
       lastInspection: map['lastInspection'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['lastInspection'] as int)
+          : null,
+      sensorData: map['sensor'] != null
+          ? HiveSensorData.fromFirebase(map['sensor'] as Map<String, dynamic>)
           : null,
       metadata: map['metadata'] as Map<String, dynamic>?,
     );
@@ -69,13 +66,11 @@ class HiveModel extends Hive {
       'apiaryId': apiaryId,
       'ownerId': ownerId,
       'description': description,
-      'hiveType': hiveType,
-      'material': material,
-      'frameCount': frameCount,
       'isActive': isActive,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt?.millisecondsSinceEpoch,
       'lastInspection': lastInspection?.millisecondsSinceEpoch,
+      'sensor': sensorData?.toFirebase(),
       'metadata': metadata,
     };
   }
@@ -88,13 +83,11 @@ class HiveModel extends Hive {
       apiaryId: apiaryId,
       ownerId: ownerId,
       description: description,
-      hiveType: hiveType,
-      material: material,
-      frameCount: frameCount,
       isActive: isActive,
       createdAt: createdAt,
       updatedAt: updatedAt,
       lastInspection: lastInspection,
+      sensorData: sensorData,
       metadata: metadata,
     );
   }
@@ -103,11 +96,9 @@ class HiveModel extends Hive {
   HiveModel copyWithUpdate({
     String? name,
     String? description,
-    String? hiveType,
-    String? material,
-    int? frameCount,
     bool? isActive,
     DateTime? lastInspection,
+    HiveSensorData? sensorData,
     Map<String, dynamic>? metadata,
   }) {
     return HiveModel(
@@ -116,13 +107,11 @@ class HiveModel extends Hive {
       apiaryId: apiaryId,
       ownerId: ownerId,
       description: description ?? this.description,
-      hiveType: hiveType ?? this.hiveType,
-      material: material ?? this.material,
-      frameCount: frameCount ?? this.frameCount,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
       lastInspection: lastInspection ?? this.lastInspection,
+      sensorData: sensorData ?? this.sensorData,
       metadata: metadata ?? this.metadata,
     );
   }

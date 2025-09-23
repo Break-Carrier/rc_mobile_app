@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/entities/hive.dart';
+import '../../../sensor/domain/entities/hive_sensor_data.dart';
+import '../../../sensor/domain/entities/sensor_reading.dart';
+import '../../../sensor/data/repositories/sensor_repository_impl.dart';
+import '../../../sensor/presentation/widgets/sensor_chart_widget.dart';
 import '../../data/injection/hive_injection.dart';
 import '../bloc/hive_bloc.dart';
 import '../bloc/hive_event.dart';
@@ -25,16 +29,55 @@ class HiveDetailScreen extends StatelessWidget {
   }
 }
 
-class _HiveDetailView extends StatelessWidget {
+class _HiveDetailView extends StatefulWidget {
   final Hive hive;
 
   const _HiveDetailView({required this.hive});
 
   @override
+  State<_HiveDetailView> createState() => _HiveDetailViewState();
+}
+
+class _HiveDetailViewState extends State<_HiveDetailView> {
+  List<SensorReading> _sensorHistory = [];
+  bool _isLoadingHistory = false;
+  late final SensorRepositoryImpl _sensorRepository;
+
+  @override
+  void initState() {
+    super.initState();
+    // Créer une instance simple du repository pour les capteurs
+    _sensorRepository = SensorRepositoryImpl(
+      null, // HiveServiceCoordinator - pas nécessaire pour les données mockées
+      null, // FirebaseService - pas nécessaire pour les données mockées
+    );
+    _loadSensorHistory();
+  }
+
+  Future<void> _loadSensorHistory() async {
+    setState(() {
+      _isLoadingHistory = true;
+    });
+
+    try {
+      final history = await _sensorRepository.getSensorHistory(widget.hive.id);
+      setState(() {
+        _sensorHistory = history;
+        _isLoadingHistory = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingHistory = false;
+      });
+      debugPrint('Erreur lors du chargement de l\'historique: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(hive.name),
+        title: Text(widget.hive.name),
         elevation: 0,
         actions: [
           IconButton(
@@ -49,9 +92,9 @@ class _HiveDetailView extends StatelessWidget {
                 value: 'toggle_status',
                 child: Row(
                   children: [
-                    Icon(hive.isActive ? Icons.pause : Icons.play_arrow),
+                    Icon(widget.hive.isActive ? Icons.pause : Icons.play_arrow),
                     const SizedBox(width: 8),
-                    Text(hive.isActive ? 'Désactiver' : 'Activer'),
+                    Text(widget.hive.isActive ? 'Désactiver' : 'Activer'),
                   ],
                 ),
               ),
@@ -84,18 +127,20 @@ class _HiveDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _HiveStatusCard(hive: hive),
+            _HiveStatusCard(hive: widget.hive),
             const SizedBox(height: 16),
-            _HiveInfoCard(hive: hive),
+            _HiveSensorDataCard(sensorData: widget.hive.sensorData),
             const SizedBox(height: 16),
-            _HiveSpecsCard(hive: hive),
-            if (hive.description?.isNotEmpty ?? false) ...[
+            _buildSensorChart(),
+            const SizedBox(height: 16),
+            _HiveInfoCard(hive: widget.hive),
+            if (widget.hive.description?.isNotEmpty ?? false) ...[
               const SizedBox(height: 16),
-              _HiveDescriptionCard(hive: hive),
+              _HiveDescriptionCard(hive: widget.hive),
             ],
             const SizedBox(height: 16),
             _HiveActionsCard(
-              hive: hive,
+              hive: widget.hive,
               onInspection: () => _markInspection(context),
               onEdit: () => _showEditHiveDialog(context),
             ),
@@ -105,14 +150,41 @@ class _HiveDetailView extends StatelessWidget {
     );
   }
 
+  Widget _buildSensorChart() {
+    if (_isLoadingHistory) {
+      return Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    return SensorChartWidget(
+      readings: _sensorHistory,
+      title: 'Historique des capteurs',
+      showTemperature: true,
+      showHumidity: true,
+    );
+  }
+
   void _showEditHiveDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (dialogContext) => BlocProvider.value(
         value: context.read<HiveBloc>(),
         child: CreateHiveDialog(
-          apiaryId: hive.apiaryId,
-          hive: hive,
+          apiaryId: widget.hive.apiaryId,
+          hive: widget.hive,
         ),
       ),
     );
@@ -135,7 +207,8 @@ class _HiveDetailView extends StatelessWidget {
   void _toggleHiveStatus(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(hive.isActive ? 'Ruche désactivée' : 'Ruche activée'),
+        content:
+            Text(widget.hive.isActive ? 'Ruche désactivée' : 'Ruche activée'),
       ),
     );
   }
@@ -151,7 +224,8 @@ class _HiveDetailView extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Supprimer la ruche'),
-        content: Text('Êtes-vous sûr de vouloir supprimer "${hive.name}" ?'),
+        content:
+            Text('Êtes-vous sûr de vouloir supprimer "${widget.hive.name}" ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -160,7 +234,7 @@ class _HiveDetailView extends StatelessWidget {
           FilledButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              context.read<HiveBloc>().add(DeleteHiveRequested(hive.id));
+              context.read<HiveBloc>().add(DeleteHiveRequested(widget.hive.id));
               Navigator.of(context).pop();
             },
             style: FilledButton.styleFrom(
@@ -323,63 +397,6 @@ class _HiveInfoCard extends StatelessWidget {
   }
 }
 
-/// Widget de carte de spécifications de la ruche
-class _HiveSpecsCard extends StatelessWidget {
-  final Hive hive;
-
-  const _HiveSpecsCard({required this.hive});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Spécifications',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            if (hive.hiveType != null)
-              _SpecRow(
-                icon: Icons.home_work,
-                label: 'Type',
-                value: hive.hiveType!,
-              ),
-            if (hive.material != null) ...[
-              const SizedBox(height: 12),
-              _SpecRow(
-                icon: Icons.construction,
-                label: 'Matériau',
-                value: hive.material!,
-              ),
-            ],
-            if (hive.frameCount != null) ...[
-              const SizedBox(height: 12),
-              _SpecRow(
-                icon: Icons.grid_view,
-                label: 'Nombre de cadres',
-                value: '${hive.frameCount}',
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Widget de carte de description de la ruche
 class _HiveDescriptionCard extends StatelessWidget {
   final Hive hive;
@@ -476,6 +493,276 @@ class _HiveActionsCard extends StatelessWidget {
   }
 }
 
+/// Widget de carte pour afficher les données des capteurs
+class _HiveSensorDataCard extends StatelessWidget {
+  final HiveSensorData? sensorData;
+
+  const _HiveSensorDataCard({this.sensorData});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.sensors,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Données des capteurs',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (sensorData != null) ...[
+              // Température et Humidité en vedette
+              Row(
+                children: [
+                  Expanded(
+                    child: _TemperatureCard(sensorData!.temperature),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HumidityCard(sensorData!.humidity),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // État du couvert
+              _SensorDataRow(
+                icon: sensorData!.coverState == CoverState.open
+                    ? Icons.open_in_full
+                    : Icons.close_fullscreen,
+                label: 'Couvert',
+                value: sensorData!.coverState == CoverState.open
+                    ? 'Ouvert'
+                    : 'Fermé',
+                color: sensorData!.coverState == CoverState.open
+                    ? Colors.green
+                    : Colors.orange,
+              ),
+              const SizedBox(height: 12),
+
+              // État de la LED
+              _SensorDataRow(
+                icon: sensorData!.ledState == LedState.on
+                    ? Icons.lightbulb
+                    : Icons.lightbulb_outline,
+                label: 'LED',
+                value:
+                    sensorData!.ledState == LedState.on ? 'Allumée' : 'Éteinte',
+                color: sensorData!.ledState == LedState.on
+                    ? Colors.amber
+                    : Colors.grey,
+              ),
+            ] else ...[
+              // Message quand les données ne sont pas disponibles
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.sensors_off,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Aucune donnée de capteur disponible',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Les capteurs de cette ruche ne sont pas encore connectés ou configurés.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget pour afficher la température en vedette
+class _TemperatureCard extends StatelessWidget {
+  final double temperature;
+
+  const _TemperatureCard(this.temperature);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _getTemperatureColor(temperature);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.thermostat,
+            color: color,
+            size: 32,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${temperature.toStringAsFixed(1)}°C',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Température',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: color,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getTemperatureColor(double temperature) {
+    if (temperature < 20) return Colors.blue;
+    if (temperature > 30) return Colors.red;
+    return Colors.green;
+  }
+}
+
+/// Widget pour afficher l'humidité en vedette
+class _HumidityCard extends StatelessWidget {
+  final double humidity;
+
+  const _HumidityCard(this.humidity);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _getHumidityColor(humidity);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.water_drop,
+            color: color,
+            size: 32,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${humidity.toStringAsFixed(0)}%',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Humidité',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: color,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getHumidityColor(double humidity) {
+    if (humidity < 40) return Colors.orange;
+    if (humidity > 80) return Colors.blue;
+    return Colors.green;
+  }
+}
+
+/// Widget pour afficher une ligne de données de capteur
+class _SensorDataRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _SensorDataRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
+          ),
+          child: Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Widget réutilisable pour afficher une ligne d'information
 class _InfoRow extends StatelessWidget {
   final IconData icon;
@@ -513,45 +800,6 @@ class _InfoRow extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Widget réutilisable pour afficher une ligne de spécification
-class _SpecRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _SpecRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        const SizedBox(width: 12),
-        Text(
-          '$label: ',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
       ],

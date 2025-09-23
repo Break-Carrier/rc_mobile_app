@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import '../../domain/entities/hive.dart';
 import '../../domain/repositories/hive_repository.dart';
 import '../models/hive_model.dart';
+import '../../../sensor/domain/entities/hive_sensor_data.dart';
 
 /// Implémentation Firebase du repository des ruches
 class FirebaseHiveRepository implements HiveRepository {
@@ -17,6 +18,29 @@ class FirebaseHiveRepository implements HiveRepository {
 
   /// Référence vers l'index rucher-ruches
   DatabaseReference get _apiaryHivesRef => _database.ref('apiary_hives');
+
+  /// Génère des données de capteurs mockées pour une ruche
+  HiveSensorData _generateMockSensorData(String hiveId) {
+    final now = DateTime.now();
+    final baseTemp = 22.0 + (hiveId.hashCode % 8); // 22-30°C
+    final baseHumidity = 45.0 + (hiveId.hashCode % 25); // 45-70%
+
+    // Simulation d'une variation diurne
+    final hour = now.hour;
+    final tempVariation = (hour - 12) * 0.5; // Plus chaud l'après-midi
+    final humidityVariation =
+        (hour < 6 || hour > 18) ? 10 : -5; // Plus humide la nuit
+
+    return HiveSensorData(
+      temperature: (baseTemp + tempVariation + (hiveId.hashCode % 3) - 1)
+          .clamp(18.0, 35.0),
+      humidity: (baseHumidity + humidityVariation + (hiveId.hashCode % 5) - 2)
+          .clamp(30.0, 85.0),
+      coverState:
+          (hiveId.hashCode % 2) == 0 ? CoverState.open : CoverState.closed,
+      ledState: (hiveId.hashCode % 3) == 0 ? LedState.on : LedState.off,
+    );
+  }
 
   @override
   Future<({List<Hive>? result, Exception? error})> getApiaryHives(
@@ -53,7 +77,17 @@ class FirebaseHiveRepository implements HiveRepository {
         if (hiveSnapshot.exists) {
           final hiveData = hiveSnapshot.value as Map<dynamic, dynamic>;
           final hive = HiveModel.fromMap(hiveId, hiveData);
-          hives.add(hive);
+
+          // Ajouter des données de capteurs mockées si pas présentes
+          if (hive.sensorData == null) {
+            final mockSensorData = _generateMockSensorData(hiveId);
+            final hiveWithSensorData =
+                hive.copyWith(sensorData: mockSensorData);
+            hives.add(hiveWithSensorData);
+            _logger.d('✅ Données mockées ajoutées à la ruche: $hiveId');
+          } else {
+            hives.add(hive);
+          }
         }
       }
 
@@ -90,7 +124,16 @@ class FirebaseHiveRepository implements HiveRepository {
       hivesData.forEach((key, value) {
         final hiveData = Map<dynamic, dynamic>.from(value as Map);
         final hive = HiveModel.fromMap(key.toString(), hiveData);
-        hives.add(hive);
+
+        // Ajouter des données de capteurs mockées si pas présentes
+        if (hive.sensorData == null) {
+          final mockSensorData = _generateMockSensorData(key.toString());
+          final hiveWithSensorData = hive.copyWith(sensorData: mockSensorData);
+          hives.add(hiveWithSensorData);
+          _logger.d('✅ Données mockées ajoutées à la ruche: $key');
+        } else {
+          hives.add(hive);
+        }
       });
 
       _logger
@@ -119,6 +162,14 @@ class FirebaseHiveRepository implements HiveRepository {
 
       final hiveData = snapshot.value as Map<dynamic, dynamic>;
       final hive = HiveModel.fromMap(hiveId, hiveData);
+
+      // Ajouter des données de capteurs mockées si pas présentes
+      if (hive.sensorData == null) {
+        final mockSensorData = _generateMockSensorData(hiveId);
+        final hiveWithSensorData = hive.copyWith(sensorData: mockSensorData);
+        _logger.d('✅ Données mockées ajoutées à la ruche: $hiveId');
+        return (result: hiveWithSensorData, error: null);
+      }
 
       return (result: hive, error: null);
     } catch (e, stackTrace) {

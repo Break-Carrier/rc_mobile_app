@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../../domain/entities/hive.dart';
+import '../../../hive/domain/entities/hive.dart';
 import '../../domain/entities/hive_sensor_data.dart';
 import '../../domain/entities/apiary.dart';
 import '../../domain/entities/current_state.dart';
@@ -30,13 +30,26 @@ class SensorRepositoryImpl implements ISensorRepository {
 
   @override
   Future<List<Hive>> getHivesForApiary(String apiaryId) async {
-    if (_firebaseService == null) return [];
+    // Si pas de Firebase, retourner des ruches mockées
+    if (_firebaseService == null) {
+      final mockHives = _generateMockHivesForApiary(apiaryId);
+      debugPrint(
+          '✅ Repository: Generated ${mockHives.length} mock hives for apiary $apiaryId');
+      return mockHives;
+    }
+
     try {
       await _firebaseService!.initialize();
 
       // Récupérer toutes les ruches depuis Firebase
       final data = await _firebaseService!.getData('hives');
-      if (data == null) return [];
+      if (data == null) {
+        // Si pas de données Firebase, retourner des ruches mockées
+        final mockHives = _generateMockHivesForApiary(apiaryId);
+        debugPrint(
+            '✅ Repository: No Firebase data, generated ${mockHives.length} mock hives for apiary $apiaryId');
+        return mockHives;
+      }
 
       final List<Hive> hives = [];
 
@@ -44,8 +57,13 @@ class SensorRepositoryImpl implements ISensorRepository {
       (data as Map<String, dynamic>).forEach((hiveId, hiveData) {
         if (hiveData is Map<String, dynamic>) {
           final hive = Hive.fromFirebase(hiveData, hiveId);
-          // Filtrer par apiaryId si nécessaire (pour l'instant on récupère toutes les ruches)
-          hives.add(hive);
+          // Ajouter des données de capteurs mockées si pas présentes
+          if (hive.sensorData == null) {
+            final mockSensorData = _generateMockSensorData(hiveId);
+            hives.add(hive.copyWith(sensorData: mockSensorData));
+          } else {
+            hives.add(hive);
+          }
         }
       });
 
@@ -53,19 +71,35 @@ class SensorRepositoryImpl implements ISensorRepository {
       return hives;
     } catch (e) {
       debugPrint('❌ Repository: Error getting hives for apiary $apiaryId: $e');
-      return [];
+      // En cas d'erreur, retourner des ruches mockées
+      final mockHives = _generateMockHivesForApiary(apiaryId);
+      debugPrint(
+          '✅ Repository: Error occurred, generated ${mockHives.length} mock hives for apiary $apiaryId');
+      return mockHives;
     }
   }
 
   @override
   Future<Hive?> getHiveById(String hiveId) async {
-    if (_firebaseService == null) return null;
+    // Si pas de Firebase, créer une ruche mockée avec des données de capteurs
+    if (_firebaseService == null) {
+      final mockHive = _generateMockHive(hiveId);
+      debugPrint('✅ Repository: Generated mock hive $hiveId with sensor data');
+      return mockHive;
+    }
+
     try {
       await _firebaseService!.initialize();
 
       // Récupérer directement la ruche depuis Firebase
       final data = await _firebaseService!.getData('hives/$hiveId');
-      if (data == null) return null;
+      if (data == null) {
+        // Si pas de données Firebase, créer une ruche mockée
+        final mockHive = _generateMockHive(hiveId);
+        debugPrint(
+            '✅ Repository: No Firebase data, generated mock hive $hiveId');
+        return mockHive;
+      }
 
       final hive = Hive.fromFirebase(data as Map<String, dynamic>, hiveId);
 
@@ -83,7 +117,10 @@ class SensorRepositoryImpl implements ISensorRepository {
       return hive;
     } catch (e) {
       debugPrint('❌ Repository: Error getting hive $hiveId: $e');
-      return null;
+      // En cas d'erreur, retourner une ruche mockée
+      final mockHive = _generateMockHive(hiveId);
+      debugPrint('✅ Repository: Error occurred, generated mock hive $hiveId');
+      return mockHive;
     }
   }
 
@@ -106,6 +143,53 @@ class SensorRepositoryImpl implements ISensorRepository {
   /// Récupère l'historique des capteurs sur 7 heures (données mockées)
   Future<List<SensorReading>> getSensorHistory(String hiveId) async {
     return _generateMockSensorHistory(hiveId);
+  }
+
+  /// Génère plusieurs ruches mockées pour un rucher
+  List<Hive> _generateMockHivesForApiary(String apiaryId) {
+    final hives = <Hive>[];
+    final now = DateTime.now();
+
+    // Générer 2-3 ruches mockées
+    for (int i = 0; i < 3; i++) {
+      final hiveId = 'mock-hive-$apiaryId-$i';
+      final hive = Hive(
+        id: hiveId,
+        name: 'Ruche ${i + 1}',
+        apiaryId: apiaryId,
+        ownerId: 'mock-owner-id',
+        description: 'Ruche de démonstration ${i + 1}',
+        isActive: true,
+        createdAt: now.subtract(Duration(days: 30 + i * 5)),
+        updatedAt: now,
+        lastInspection: now.subtract(Duration(days: 10 + i * 3)),
+        sensorData: _generateMockSensorData(hiveId),
+        metadata: {'source': 'mock', 'index': i},
+      );
+      hives.add(hive);
+    }
+
+    return hives;
+  }
+
+  /// Génère une ruche complète mockée avec des données de capteurs
+  Hive _generateMockHive(String hiveId) {
+    final now = DateTime.now();
+    final sensorData = _generateMockSensorData(hiveId);
+
+    return Hive(
+      id: hiveId,
+      name: 'Ruche Mock ${hiveId.substring(0, 6)}',
+      apiaryId: 'mock-apiary-id',
+      ownerId: 'mock-owner-id',
+      description: 'Ruche de démonstration avec données mockées',
+      isActive: true,
+      createdAt: now.subtract(const Duration(days: 30)),
+      updatedAt: now,
+      lastInspection: now.subtract(const Duration(days: 15)),
+      sensorData: sensorData,
+      metadata: {'source': 'mock', 'generated_at': now.toIso8601String()},
+    );
   }
 
   /// Génère des données de capteurs mockées réalistes

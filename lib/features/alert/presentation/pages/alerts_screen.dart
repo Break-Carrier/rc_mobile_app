@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import '../bloc/alert_bloc.dart';
 import '../widgets/alert_card.dart';
 import '../widgets/alert_filter_chip.dart';

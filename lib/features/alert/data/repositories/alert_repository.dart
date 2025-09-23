@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import '../../../../core/config/app_config.dart';
 import '../../domain/entities/threshold_event.dart';
 import '../../domain/entities/alert_settings.dart';
 import '../../domain/repositories/alert_repository_interface.dart';
 import '../models/threshold_event_model.dart';
-import '../models/alert_settings_model.dart';
 import '../services/alert_detection_service.dart';
 
 /// Implémentation du repository pour les alertes avec Firebase
@@ -396,27 +394,32 @@ class AlertRepository implements IAlertRepository {
   }
 
   /// Démarre la surveillance des alertes pour une ruche
+  @override
   Future<void> startMonitoringHive(String hiveId, String apiaryId) async {
     await _detectionService.startMonitoringHive(hiveId, apiaryId);
   }
 
   /// Arrête la surveillance des alertes pour une ruche
+  @override
   Future<void> stopMonitoringHive(String hiveId) async {
     await _detectionService.stopMonitoringHive(hiveId);
   }
 
   /// Met à jour les paramètres d'alertes pour une ruche
+  @override
   Future<void> updateAlertSettings(
       String hiveId, AlertSettings settings) async {
     await _detectionService.updateAlertSettings(hiveId, settings);
   }
 
   /// Récupère les paramètres d'alertes pour une ruche
+  @override
   AlertSettings? getAlertSettings(String hiveId) {
     return _detectionService.getAlertSettings(hiveId);
   }
 
   /// Libère les ressources
+  @override
   void dispose() {
     _detectionService.dispose();
     _logger.i('🧹 Repository d\'alertes nettoyé');

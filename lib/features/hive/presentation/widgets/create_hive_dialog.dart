@@ -120,101 +120,6 @@ class _CreateHiveDialogState extends State<CreateHiveDialog> {
 
                       const SizedBox(height: 16),
 
-                      // Type de ruche
-                      DropdownButtonFormField<String>(
-                        value: _selectedHiveType,
-                        decoration: const InputDecoration(
-                          labelText: 'Type de ruche',
-                          prefixIcon: Icon(Icons.category_outlined),
-                        ),
-                        items: _hiveTypes.map((type) {
-                          return DropdownMenuItem(
-                            value: type,
-                            child: Text(type),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedHiveType = value!;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Matériau
-                      DropdownButtonFormField<String>(
-                        value: _selectedMaterial,
-                        decoration: const InputDecoration(
-                          labelText: 'Matériau',
-                          prefixIcon: Icon(Icons.build_outlined),
-                        ),
-                        items: _materials.map((material) {
-                          return DropdownMenuItem(
-                            value: material,
-                            child: Text(material),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedMaterial = value!;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Nombre de cadres
-                      Row(
-                        children: [
-                          const Icon(Icons.grid_view),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Nombre de cadres',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const Spacer(),
-                          Row(
-                            children: [
-                              IconButton(
-                                onPressed: _frameCount > 1
-                                    ? () => setState(() => _frameCount--)
-                                    : null,
-                                icon: const Icon(Icons.remove),
-                              ),
-                              Container(
-                                width: 60,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color:
-                                        Theme.of(context).colorScheme.outline,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  '$_frameCount',
-                                  textAlign: TextAlign.center,
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: _frameCount < 20
-                                    ? () => setState(() => _frameCount++)
-                                    : null,
-                                icon: const Icon(Icons.add),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
                       // Statut actif
                       SwitchListTile(
                         title: const Text('Ruche active'),
@@ -299,9 +204,7 @@ class _CreateHiveDialogState extends State<CreateHiveDialog> {
                 name: name,
                 apiaryId: widget.apiaryId,
                 description: description.isNotEmpty ? description : '',
-                hiveType: _selectedHiveType,
-                material: _selectedMaterial,
-                frameCount: _frameCount,
+          
               ),
             ),
           );

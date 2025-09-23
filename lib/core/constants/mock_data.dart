@@ -31,7 +31,6 @@ class MockData {
       hiveId: 'hive_1',
       temperature: 35.9,
       humidity: 59.5,
-      weight: 45.4,
       timestamp: DateTime.now().subtract(const Duration(minutes: 20)),
     ),
     SensorReading(

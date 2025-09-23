@@ -68,16 +68,10 @@ class CreateHiveParams {
   final String apiaryId;
   final String name;
   final String? description;
-  final String? hiveType;
-  final String? material;
-  final int? frameCount;
 
   const CreateHiveParams({
     required this.apiaryId,
     required this.name,
     this.description,
-    this.hiveType,
-    this.material,
-    this.frameCount,
   });
 }

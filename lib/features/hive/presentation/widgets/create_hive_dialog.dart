@@ -204,7 +204,6 @@ class _CreateHiveDialogState extends State<CreateHiveDialog> {
                 name: name,
                 apiaryId: widget.apiaryId,
                 description: description.isNotEmpty ? description : '',
-          
               ),
             ),
           );

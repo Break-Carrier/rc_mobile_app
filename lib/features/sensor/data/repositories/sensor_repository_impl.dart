@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/hive.dart';
+import '../../domain/entities/hive_sensor_data.dart';
 import '../../domain/entities/apiary.dart';
 import '../../domain/entities/current_state.dart';
 import '../../domain/entities/sensor_reading.dart';
@@ -65,6 +66,26 @@ class SensorRepositoryImpl implements ISensorRepository {
       if (data == null) return null;
 
       final hive = Hive.fromFirebase(data as Map<String, dynamic>, hiveId);
+
+      // Si la ruche n'a pas de données de capteurs, ajouter des données simulées pour le test
+      if (hive.sensorData == null) {
+        final simulatedSensorData = HiveSensorData(
+          temperature: 24.5 +
+              (hiveId.hashCode % 10) -
+              5, // Température entre 19.5 et 29.5
+          humidity: 50.0 + (hiveId.hashCode % 30), // Humidité entre 50 et 80
+          coverState:
+              (hiveId.hashCode % 2) == 0 ? CoverState.open : CoverState.closed,
+          ledState: (hiveId.hashCode % 3) == 0 ? LedState.on : LedState.off,
+        );
+
+        final hiveWithSensorData =
+            hive.copyWith(sensorData: simulatedSensorData);
+        debugPrint(
+            '✅ Repository: Retrieved hive $hiveId from Firebase with simulated sensor data');
+        return hiveWithSensorData;
+      }
+
       debugPrint('✅ Repository: Retrieved hive $hiveId from Firebase');
       return hive;
     } catch (e) {

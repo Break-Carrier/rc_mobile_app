@@ -87,10 +87,8 @@ class _HiveDetailView extends StatelessWidget {
           children: [
             _HiveStatusCard(hive: hive),
             const SizedBox(height: 16),
-            if (hive.sensorData != null) ...[
-              _HiveSensorDataCard(sensorData: hive.sensorData!),
-              const SizedBox(height: 16),
-            ],
+            _HiveSensorDataCard(sensorData: hive.sensorData),
+            const SizedBox(height: 16),
             _HiveInfoCard(hive: hive),
             if (hive.description?.isNotEmpty ?? false) ...[
               const SizedBox(height: 16),
@@ -424,9 +422,9 @@ class _HiveActionsCard extends StatelessWidget {
 
 /// Widget de carte pour afficher les données des capteurs
 class _HiveSensorDataCard extends StatelessWidget {
-  final HiveSensorData sensorData;
+  final HiveSensorData? sensorData;
 
-  const _HiveSensorDataCard({required this.sensorData});
+  const _HiveSensorDataCard({this.sensorData});
 
   @override
   Widget build(BuildContext context) {
@@ -459,46 +457,84 @@ class _HiveSensorDataCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
+            if (sensorData != null) ...[
+              // Température et Humidité en vedette
+              Row(
+                children: [
+                  Expanded(
+                    child: _TemperatureCard(sensorData!.temperature),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HumidityCard(sensorData!.humidity),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
 
-            // Température et Humidité en vedette
-            Row(
-              children: [
-                Expanded(
-                  child: _TemperatureCard(sensorData.temperature),
+              // État du couvert
+              _SensorDataRow(
+                icon: sensorData!.coverState == CoverState.open
+                    ? Icons.open_in_full
+                    : Icons.close_fullscreen,
+                label: 'Couvert',
+                value: sensorData!.coverState == CoverState.open
+                    ? 'Ouvert'
+                    : 'Fermé',
+                color: sensorData!.coverState == CoverState.open
+                    ? Colors.green
+                    : Colors.orange,
+              ),
+              const SizedBox(height: 12),
+
+              // État de la LED
+              _SensorDataRow(
+                icon: sensorData!.ledState == LedState.on
+                    ? Icons.lightbulb
+                    : Icons.lightbulb_outline,
+                label: 'LED',
+                value:
+                    sensorData!.ledState == LedState.on ? 'Allumée' : 'Éteinte',
+                color: sensorData!.ledState == LedState.on
+                    ? Colors.amber
+                    : Colors.grey,
+              ),
+            ] else ...[
+              // Message quand les données ne sont pas disponibles
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _HumidityCard(sensorData.humidity),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.sensors_off,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Aucune donnée de capteur disponible',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Les capteurs de cette ruche ne sont pas encore connectés ou configurés.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // État du couvert
-            _SensorDataRow(
-              icon: sensorData.coverState == CoverState.open
-                  ? Icons.open_in_full
-                  : Icons.close_fullscreen,
-              label: 'Couvert',
-              value:
-                  sensorData.coverState == CoverState.open ? 'Ouvert' : 'Fermé',
-              color: sensorData.coverState == CoverState.open
-                  ? Colors.green
-                  : Colors.orange,
-            ),
-            const SizedBox(height: 12),
-
-            // État de la LED
-            _SensorDataRow(
-              icon: sensorData.ledState == LedState.on
-                  ? Icons.lightbulb
-                  : Icons.lightbulb_outline,
-              label: 'LED',
-              value: sensorData.ledState == LedState.on ? 'Allumée' : 'Éteinte',
-              color: sensorData.ledState == LedState.on
-                  ? Colors.amber
-                  : Colors.grey,
-            ),
+              ),
+            ],
           ],
         ),
       ),

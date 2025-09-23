@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/entities/hive.dart';
 import '../../../sensor/domain/entities/hive_sensor_data.dart';
+import '../../../sensor/domain/entities/sensor_reading.dart';
+import '../../../sensor/data/repositories/sensor_repository_impl.dart';
+import '../../../sensor/presentation/widgets/sensor_chart_widget.dart';
 import '../../data/injection/hive_injection.dart';
 import '../bloc/hive_bloc.dart';
 import '../bloc/hive_event.dart';
@@ -26,16 +29,55 @@ class HiveDetailScreen extends StatelessWidget {
   }
 }
 
-class _HiveDetailView extends StatelessWidget {
+class _HiveDetailView extends StatefulWidget {
   final Hive hive;
 
   const _HiveDetailView({required this.hive});
 
   @override
+  State<_HiveDetailView> createState() => _HiveDetailViewState();
+}
+
+class _HiveDetailViewState extends State<_HiveDetailView> {
+  List<SensorReading> _sensorHistory = [];
+  bool _isLoadingHistory = false;
+  late final SensorRepositoryImpl _sensorRepository;
+
+  @override
+  void initState() {
+    super.initState();
+    // Créer une instance simple du repository pour les capteurs
+    _sensorRepository = SensorRepositoryImpl(
+      null, // HiveServiceCoordinator - pas nécessaire pour les données mockées
+      null, // FirebaseService - pas nécessaire pour les données mockées
+    );
+    _loadSensorHistory();
+  }
+
+  Future<void> _loadSensorHistory() async {
+    setState(() {
+      _isLoadingHistory = true;
+    });
+
+    try {
+      final history = await _sensorRepository.getSensorHistory(widget.hive.id);
+      setState(() {
+        _sensorHistory = history;
+        _isLoadingHistory = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingHistory = false;
+      });
+      debugPrint('Erreur lors du chargement de l\'historique: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(hive.name),
+        title: Text(widget.hive.name),
         elevation: 0,
         actions: [
           IconButton(
@@ -50,9 +92,9 @@ class _HiveDetailView extends StatelessWidget {
                 value: 'toggle_status',
                 child: Row(
                   children: [
-                    Icon(hive.isActive ? Icons.pause : Icons.play_arrow),
+                    Icon(widget.hive.isActive ? Icons.pause : Icons.play_arrow),
                     const SizedBox(width: 8),
-                    Text(hive.isActive ? 'Désactiver' : 'Activer'),
+                    Text(widget.hive.isActive ? 'Désactiver' : 'Activer'),
                   ],
                 ),
               ),
@@ -85,18 +127,20 @@ class _HiveDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _HiveStatusCard(hive: hive),
+            _HiveStatusCard(hive: widget.hive),
             const SizedBox(height: 16),
-            _HiveSensorDataCard(sensorData: hive.sensorData),
+            _HiveSensorDataCard(sensorData: widget.hive.sensorData),
             const SizedBox(height: 16),
-            _HiveInfoCard(hive: hive),
-            if (hive.description?.isNotEmpty ?? false) ...[
+            _buildSensorChart(),
+            const SizedBox(height: 16),
+            _HiveInfoCard(hive: widget.hive),
+            if (widget.hive.description?.isNotEmpty ?? false) ...[
               const SizedBox(height: 16),
-              _HiveDescriptionCard(hive: hive),
+              _HiveDescriptionCard(hive: widget.hive),
             ],
             const SizedBox(height: 16),
             _HiveActionsCard(
-              hive: hive,
+              hive: widget.hive,
               onInspection: () => _markInspection(context),
               onEdit: () => _showEditHiveDialog(context),
             ),
@@ -106,14 +150,41 @@ class _HiveDetailView extends StatelessWidget {
     );
   }
 
+  Widget _buildSensorChart() {
+    if (_isLoadingHistory) {
+      return Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    return SensorChartWidget(
+      readings: _sensorHistory,
+      title: 'Historique des capteurs',
+      showTemperature: true,
+      showHumidity: true,
+    );
+  }
+
   void _showEditHiveDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (dialogContext) => BlocProvider.value(
         value: context.read<HiveBloc>(),
         child: CreateHiveDialog(
-          apiaryId: hive.apiaryId,
-          hive: hive,
+          apiaryId: widget.hive.apiaryId,
+          hive: widget.hive,
         ),
       ),
     );
@@ -136,7 +207,8 @@ class _HiveDetailView extends StatelessWidget {
   void _toggleHiveStatus(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(hive.isActive ? 'Ruche désactivée' : 'Ruche activée'),
+        content:
+            Text(widget.hive.isActive ? 'Ruche désactivée' : 'Ruche activée'),
       ),
     );
   }
@@ -152,7 +224,8 @@ class _HiveDetailView extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Supprimer la ruche'),
-        content: Text('Êtes-vous sûr de vouloir supprimer "${hive.name}" ?'),
+        content:
+            Text('Êtes-vous sûr de vouloir supprimer "${widget.hive.name}" ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -161,7 +234,7 @@ class _HiveDetailView extends StatelessWidget {
           FilledButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              context.read<HiveBloc>().add(DeleteHiveRequested(hive.id));
+              context.read<HiveBloc>().add(DeleteHiveRequested(widget.hive.id));
               Navigator.of(context).pop();
             },
             style: FilledButton.styleFrom(
